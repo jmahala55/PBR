@@ -9,11 +9,10 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email import encoders
 import io
-from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib import colors
-from reportlab.lib.units import inch
+
+# NEW IMPORTS FOR WEASYPRINT
+import weasyprint
+from jinja2 import Template
 
 app = Flask(__name__)
 
@@ -279,130 +278,132 @@ def get_stats():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+def get_logo_base64():
+    """Convert PBR logo to base64 for embedding in HTML"""
+    try:
+        with open('pbr.png', 'rb') as image_file:
+            encoded_string = base64.b64encode(image_file.read()).decode()
+            return f"data:image/png;base64,{encoded_string}"
+    except FileNotFoundError:
+        print("pbr.png not found")
+        return None
+
 def generate_pitcher_pdf(pitcher_name, pitch_data, date):
-    """Generate a PDF report for the pitcher using ReportLab"""
+    """Generate a PDF report for the pitcher using WeasyPrint with static image"""
     try:
         # Calculate summary stats
         if not pitch_data:
             print(f"No pitch data for {pitcher_name}")
             return None
             
-        total_pitches = len(pitch_data)
-        speeds = [p.get('RelSpeed', 0) for p in pitch_data if p.get('RelSpeed')]
-        avg_speed = sum(speeds) / len(speeds) if speeds else 0
-        max_speed = max(speeds) if speeds else 0
-        
-        spin_rates = [p.get('SpinRate', 0) for p in pitch_data if p.get('SpinRate')]
-        avg_spin = sum(spin_rates) / len(spin_rates) if spin_rates else 0
-        
-        pitch_types = list(set([p.get('TaggedPitchType', 'Unknown') for p in pitch_data if p.get('TaggedPitchType')]))
-        
-        print(f"Generating PDF for {pitcher_name} with {total_pitches} pitches")
-        
-        # Create a bytes buffer for the PDF
-        buffer = io.BytesIO()
-        
-        # Create the PDF document
-        doc = SimpleDocTemplate(buffer, pagesize=letter)
-        styles = getSampleStyleSheet()
-        story = []
-        
-        # Title
-        title_style = ParagraphStyle(
-            'CustomTitle',
-            parent=styles['Heading1'],
-            fontSize=24,
-            spaceAfter=30,
-            alignment=1  # Center alignment
-        )
-        title = Paragraph("⚾ Pitching Performance Report", title_style)
-        story.append(title)
-        
-        # Player name and date
-        subtitle_style = ParagraphStyle(
-            'CustomSubtitle',
-            parent=styles['Heading2'],
-            fontSize=16,
-            spaceAfter=20,
-            alignment=1
-        )
-        subtitle = Paragraph(f"{pitcher_name} - {date}", subtitle_style)
-        story.append(subtitle)
-        
-        story.append(Spacer(1, 12))
-        
-        # Summary section
-        summary_style = ParagraphStyle(
-            'Summary',
-            parent=styles['Normal'],
-            fontSize=12,
-            spaceAfter=12
-        )
-        
-        story.append(Paragraph("<b>Performance Summary</b>", styles['Heading3']))
-        story.append(Paragraph(f"<b>Total Pitches:</b> {total_pitches}", summary_style))
-        story.append(Paragraph(f"<b>Average Velocity:</b> {avg_speed:.1f} mph", summary_style))
-        story.append(Paragraph(f"<b>Max Velocity:</b> {max_speed:.1f} mph", summary_style))
-        story.append(Paragraph(f"<b>Average Spin Rate:</b> {avg_spin:.0f} rpm", summary_style))
-        story.append(Paragraph(f"<b>Pitch Types:</b> {', '.join(pitch_types)}", summary_style))
-        
-        story.append(Spacer(1, 20))
-        
-        # Detailed pitch table
-        story.append(Paragraph("<b>Detailed Pitch Data</b>", styles['Heading3']))
-        story.append(Spacer(1, 12))
-        
-        # Create table data
-        table_data = [['Pitch #', 'Type', 'Velocity (mph)', 'Spin Rate (rpm)', 'Vert Break (in)', 'Horz Break (in)']]
+        # Format pitcher name (convert "Smith, Jack" to "Jack Smith")
+        if ', ' in pitcher_name:
+            last_name, first_name = pitcher_name.split(', ', 1)
+            formatted_name = f"{first_name} {last_name}"
+        else:
+            formatted_name = pitcher_name
+            
+        # Group pitches by type and calculate averages
+        pitch_type_data = {}
         
         for pitch in pitch_data:
-            row = [
-                str(pitch.get('PitchNo', 'N/A')),
-                pitch.get('TaggedPitchType', 'N/A'),
-                f"{pitch.get('RelSpeed', 0):.1f}" if pitch.get('RelSpeed') else 'N/A',
-                f"{pitch.get('SpinRate', 0):.0f}" if pitch.get('SpinRate') else 'N/A',
-                f"{pitch.get('InducedVertBreak', 0):.1f}" if pitch.get('InducedVertBreak') else 'N/A',
-                f"{pitch.get('HorzBreak', 0):.1f}" if pitch.get('HorzBreak') else 'N/A'
-            ]
-            table_data.append(row)
+            pitch_type = pitch.get('TaggedPitchType', 'Unknown')
+            if pitch_type not in pitch_type_data:
+                pitch_type_data[pitch_type] = {
+                    'pitches': [],
+                    'count': 0
+                }
+            pitch_type_data[pitch_type]['pitches'].append(pitch)
+            pitch_type_data[pitch_type]['count'] += 1
         
-        # Create and style the table
-        table = Table(table_data, colWidths=[0.8*inch, 1*inch, 1*inch, 1*inch, 1*inch, 1*inch])
-        table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, 0), 10),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-            ('FONTSIZE', (0, 1), (-1, -1), 9),
-            ('GRID', (0, 0), (-1, -1), 1, colors.black)
-        ]))
+        # Calculate averages for each pitch type
+        pitch_type_breakdown = []
         
-        story.append(table)
+        # Define priority order - Fastball/Sinker first, then alphabetical
+        priority_types = ['Fastball', 'Sinker', 'Four-Seam', '4-Seam', 'TwoSeam', 'Two-Seam']
         
-        # Footer
-        story.append(Spacer(1, 30))
-        footer_style = ParagraphStyle(
-            'Footer',
-            parent=styles['Normal'],
-            fontSize=10,
-            alignment=1
+        # Sort pitch types with priority
+        sorted_pitch_types = []
+        
+        # Add priority types first (if they exist)
+        for priority_type in priority_types:
+            for actual_type in pitch_type_data.keys():
+                if priority_type.lower() in actual_type.lower() and actual_type not in sorted_pitch_types:
+                    sorted_pitch_types.append(actual_type)
+                    break
+        
+        # Add remaining types alphabetically
+        remaining_types = [pt for pt in pitch_type_data.keys() if pt not in sorted_pitch_types]
+        sorted_pitch_types.extend(sorted(remaining_types))
+        
+        for pitch_type in sorted_pitch_types:
+            pitches = pitch_type_data[pitch_type]['pitches']
+            count = pitch_type_data[pitch_type]['count']
+            
+            # Calculate averages for this pitch type
+            velocities = [p.get('RelSpeed', 0) for p in pitches if p.get('RelSpeed')]
+            spin_rates = [p.get('SpinRate', 0) for p in pitches if p.get('SpinRate')]
+            ivbs = [p.get('InducedVertBreak', 0) for p in pitches if p.get('InducedVertBreak')]
+            hbs = [p.get('HorzBreak', 0) for p in pitches if p.get('HorzBreak')]
+            rel_sides = [p.get('RelSide', 0) for p in pitches if p.get('RelSide')]
+            rel_heights = [p.get('RelHeight', 0) for p in pitches if p.get('RelHeight')]
+            extensions = [p.get('Extension', 0) for p in pitches if p.get('Extension')]
+            
+            pitch_type_breakdown.append({
+                'name': pitch_type,
+                'count': count,
+                'avg_velocity': f"{sum(velocities)/len(velocities):.1f}" if velocities else 'N/A',
+                'avg_spin': f"{sum(spin_rates)/len(spin_rates):.0f}" if spin_rates else 'N/A',
+                'avg_ivb': f"{sum(ivbs)/len(ivbs):.1f}" if ivbs else 'N/A',
+                'avg_hb': f"{sum(hbs)/len(hbs):.1f}" if hbs else 'N/A',
+                'avg_rel_side': f"{sum(rel_sides)/len(rel_sides):.1f}" if rel_sides else 'N/A',
+                'avg_rel_height': f"{sum(rel_heights)/len(rel_heights):.1f}" if rel_heights else 'N/A',
+                'avg_extension': f"{sum(extensions)/len(extensions):.1f}" if extensions else 'N/A'
+            })
+        
+        summary_stats = {
+            'pitch_type_breakdown': pitch_type_breakdown
+        }
+        
+        print(f"Generating PDF for {formatted_name} with {len(pitch_data)} pitches")
+        
+        # Read HTML template
+        try:
+            with open('pitcher_report.html', 'r', encoding='utf-8') as file:
+                html_template = file.read()
+        except FileNotFoundError:
+            print("Error: pitcher_report.html not found. Make sure it's in the same directory as app.py")
+            return None
+        
+        # Render template with data using Jinja2
+        template = Template(html_template)
+        rendered_html = template.render(
+            pitcher_name=formatted_name,
+            date=date,
+            summary_stats=summary_stats,
+            pitch_data=pitch_data
         )
-        story.append(Paragraph("Keep up the excellent work!", footer_style))
-        story.append(Paragraph("Coaching Staff", footer_style))
         
-        # Build the PDF
-        doc.build(story)
-        
-        # Get the PDF data
-        pdf_data = buffer.getvalue()
-        buffer.close()
-        
-        print(f"PDF generated successfully for {pitcher_name}")
-        return pdf_data
+        # Generate PDF using WeasyPrint with proper base_url for static files
+        try:
+            # Get the absolute path to the current directory so WeasyPrint can find static files
+            base_url = f"file://{os.path.abspath('.')}/"
+            print(f"Using base_url: {base_url}")
+            
+            # Check if static/pbr.png exists
+            static_image_path = os.path.join(os.getcwd(), 'static', 'pbr.png')
+            if os.path.exists(static_image_path):
+                print(f"Found image at: {static_image_path}")
+            else:
+                print(f"Warning: Image not found at {static_image_path}")
+            
+            html_doc = weasyprint.HTML(string=rendered_html, base_url=base_url)
+            pdf_bytes = html_doc.write_pdf()
+            print(f"PDF generated successfully for {formatted_name}")
+            return pdf_bytes
+        except Exception as e:
+            print(f"WeasyPrint error: {str(e)}")
+            return None
         
     except Exception as e:
         print(f"Error generating PDF for {pitcher_name}: {str(e)}")
@@ -411,26 +412,33 @@ def generate_pitcher_pdf(pitcher_name, pitch_data, date):
         return None
 
 def send_pitcher_email(pitcher_name, email, pitch_data, date):
-    """Send email to pitcher with PDF attachment"""
+    """Send email to pitcher with PDF attachment (using WeasyPrint)"""
     try:
         # Check if email config is available
         if not EMAIL_USERNAME or not EMAIL_PASSWORD:
             print("Email configuration not available. Please check email_config.json")
             return False
         
-        # Generate PDF
+        # Generate PDF using WeasyPrint
         pdf_data = generate_pitcher_pdf(pitcher_name, pitch_data, date)
         if not pdf_data:
             print(f"Failed to generate PDF for {pitcher_name}")
             return False
         
+        # Format pitcher name for display
+        if ', ' in pitcher_name:
+            last_name, first_name = pitcher_name.split(', ', 1)
+            display_name = f"{first_name} {last_name}"
+        else:
+            display_name = pitcher_name
+        
         # Calculate basic stats for email body
         total_pitches = len(pitch_data) if pitch_data else 0
         
-        # Create email content (simple text, PDF has the details)
+        # Create email content
         subject = f"Your Pitching Performance Report - {date}"
         
-        body = f"""Hi {pitcher_name},
+        body = f"""Hi {display_name},
 
 Your pitching performance report for {date} is attached as a PDF.
 
@@ -457,9 +465,14 @@ Coaching Staff
         pdf_attachment = MIMEBase('application', 'octet-stream')
         pdf_attachment.set_payload(pdf_data)
         encoders.encode_base64(pdf_attachment)
+        
+        # Create filename (use display name for filename)
+        safe_name = display_name.replace(" ", "_").replace(",", "")
+        filename = f"{safe_name}_Report_{date}.pdf"
+        
         pdf_attachment.add_header(
             'Content-Disposition',
-            f'attachment; filename="{pitcher_name.replace(", ", "_")}_Report_{date}.pdf"'
+            f'attachment; filename="{filename}"'
         )
         msg.attach(pdf_attachment)
         
@@ -470,11 +483,13 @@ Coaching Staff
         server.send_message(msg)
         server.quit()
         
-        print(f"Email with PDF sent successfully to {pitcher_name} at {email}")
+        print(f"Email with PDF sent successfully to {display_name} at {email}")
         return True
         
     except Exception as e:
         print(f"Failed to send email to {pitcher_name} at {email}: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return False
 
 @app.route('/api/send-emails', methods=['POST'])
@@ -640,4 +655,5 @@ if __name__ == '__main__':
     print("Starting Flask server...")
     print("Make sure harvard-baseball-13fab221b2d4.json is in the same directory")
     print("Make sure templates/index.html exists")
+    print("Make sure pitcher_report.html exists")
     app.run(debug=True, host='0.0.0.0', port=5000)

@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pitching Performance Report - {{ pitcher_name }}</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 0.4in;
+        }
+        
+        body {
+            font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: white;
+            color: #2c3e50;
+            font-size: 11px;
+            line-height: 1.5;
+        }
+        
+        .logo-placeholder {
+            width: 320px;
+            height: 120px;
+            background: url('static/pbr.png') center/contain no-repeat;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+            margin-left: -75px;
+        }
+        
+        /* Player Info Bar */
+        .player-info {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    align-items: center;
+    margin: 20px 0;
+    padding: 20px 30px;
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    color: white;
+    border-radius: 10px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+}
+
+.player-info-left {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.player-info-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.player-info-right {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+        
+        .player-name {
+            font-size: 26px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+        .player-name-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.player-subtitle {
+    font-size: 10px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.75);
+    margin-top: 4px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+.player-subtitle::after {
+    content: "";
+    display: block;
+    width: 100px; /* wider line */
+    height: 1.5px;
+    margin: 6px auto 0;
+    background-color: rgba(255, 255, 255, 0.25); /* lighter tone for cleaner look */
+    border-radius: 2px;
+}
+        
+        .date-info {
+    font-size: 14px;
+    font-weight: 600;
+    color: white;
+    padding: 6px 14px;
+    background: linear-gradient(135deg, #1f2937, #4b5563);
+    border-radius: 9999px; /* pill shape */
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+        
+        /* Enhanced Summary Section */
+        .summary-section {
+            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+            border: 1px solid #e2e8f0;
+            margin: 25px 0;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+        
+        .summary-header {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: white;
+            margin: 0;
+            font-size: 18px;
+            text-align: center;
+            padding: 18px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        }
+        
+        .stats-container {
+            padding: 25px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+        
+        .stat-item {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #1a1a1a 0%, #2d2d2d 100%);
+        }
+        
+        .stat-label {
+            font-weight: 600;
+            color: #64748b;
+            font-size: 10px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .stat-value {
+            color: #e11d48;
+            font-size: 20px;
+            font-weight: 700;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        /* Summary Table Styling */
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            font-size: 11px;
+        }
+        
+        .summary-table th {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: white;
+            padding: 14px 10px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: none;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+        
+        .summary-table td {
+            padding: 12px 10px;
+            text-align: center;
+            border-bottom: 1px solid #f1f5f9;
+            font-weight: 500;
+        }
+        
+        .summary-table tr:nth-child(even) {
+            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+        }
+        
+        .summary-table tr:nth-child(odd) {
+            background: white;
+        }
+        
+        .pitch-type-name {
+            font-weight: 700 !important;
+            color: #1e293b !important;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 11px !important;
+            background: rgba(26,26,26,0.1) !important;
+            border-radius: 6px;
+        }
+        
+        .pitch-count {
+            font-weight: 600 !important;
+            color: #6366f1 !important;
+            background: rgba(99,102,241,0.1) !important;
+            border-radius: 4px;
+        }
+        
+        .velocity-cell {
+            font-weight: 600 !important;
+            color: #e11d48 !important;
+        }
+        
+        .spin-cell {
+            font-weight: 600 !important;
+            color: #7c3aed !important;
+        }
+        
+        .ivb-cell, .hb-cell {
+            font-weight: 600 !important;
+            color: #059669 !important;
+        }
+        
+        .release-cell, .extension-cell {
+            font-weight: 500 !important;
+            color: #64748b !important;
+        }
+        
+        /* Enhanced Details Section */
+        .details-section {
+            margin: 30px 0;
+        }
+        
+        .section-header {
+            color: white;
+            font-size: 18px;
+            margin-bottom: 20px;
+            padding: 18px 25px;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            border-radius: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        }
+        
+        /* Ultra-Clean Table */
+        .pitch-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            font-size: 10px;
+        }
+        
+        .pitch-table th {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: white;
+            padding: 16px 12px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: none;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+        
+        .pitch-table td {
+            padding: 14px 12px;
+            text-align: center;
+            border: none;
+            font-size: 10px;
+            font-weight: 500;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        
+        .pitch-table tr:nth-child(even) {
+            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+        }
+        
+        .pitch-table tr:nth-child(odd) {
+            background: white;
+        }
+        
+        /* Enhanced Pitch Numbers */
+        .pitch-number {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%) !important;
+            color: white !important;
+            font-weight: 700;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            line-height: 28px;
+            margin: 0 auto;
+            font-size: 10px;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+        
+        .pitch-type {
+            font-weight: 700;
+            color: #334155;
+            text-transform: uppercase;
+            font-size: 9px;
+            letter-spacing: 0.5px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            background: rgba(26,26,26,0.1);
+        }
+        
+        /* Enhanced Velocity Color Coding */
+        .velocity-high {
+            color: white;
+            font-weight: 700;
+            background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+            border-radius: 6px;
+            padding: 4px 8px;
+            box-shadow: 0 2px 6px rgba(220,38,38,0.3);
+        }
+        
+        .velocity-medium {
+            color: white;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ea580c 0%, #f97316 100%);
+            border-radius: 6px;
+            padding: 4px 8px;
+            box-shadow: 0 2px 6px rgba(234,88,12,0.3);
+        }
+        
+        .velocity-low {
+            color: white;
+            font-weight: 700;
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            border-radius: 6px;
+            padding: 4px 8px;
+            box-shadow: 0 2px 6px rgba(5,150,105,0.3);
+        }
+        
+        /* Enhanced Break Value Styling */
+        .break-positive {
+            color: #059669;
+            font-weight: 700;
+            background: rgba(16,185,129,0.1);
+            padding: 3px 6px;
+            border-radius: 4px;
+        }
+        
+        .break-negative {
+            color: #dc2626;
+            font-weight: 700;
+            background: rgba(220,38,38,0.1);
+            padding: 3px 6px;
+            border-radius: 4px;
+        }
+        
+        .spin-rate-high {
+            color: #7c3aed;
+            font-weight: 700;
+            background: rgba(124,58,237,0.1);
+            padding: 3px 6px;
+            border-radius: 4px;
+        }
+        
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 20px;
+            background: #1a1a1a;
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 10px;
+            position: relative;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.2);
+            height: 20px;
+            width: 100%;
+            margin: 0;
+        }
+
+        .footer-logo {
+            height: 24px;
+            width: auto;
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
+        }
+
+        .footer-text {
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            font-size: 10px;
+        }
+
+        .footer-date {
+            font-size: 10px;
+            opacity: 0.8;
+        }
+
+        @media print {
+            @page {
+       
+            
+            .footer {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+            }
+            
+        }
+
+
+        
+        /* Performance Badges */
+        .performance-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 8px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-left: 4px;
+        }
+        
+        .badge-excellent {
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            color: white;
+        }
+        
+        .badge-good {
+            background: linear-gradient(135deg, #ea580c 0%, #f97316 100%);
+            color: white;
+        }
+        
+        .badge-needs-work {
+            background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+            color: white;
+        }
+        
+        /* Responsive and Print Optimizations */
+        @media print {
+            body {
+                margin: 0;
+                padding: 0;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            
+            .header, .summary-section, .details-section, .footer {
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+            
+            .pitch-table {
+                font-size: 9px;
+            }
+            
+            .pitch-table th,
+            .pitch-table td {
+                padding: 10px 8px;
+            }
+            
+            .stat-item:hover,
+            .pitch-table tr:hover {
+                transform: none;
+                background: inherit !important;
+            }
+        }
+        
+        /* Subtle animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+   <div class="player-info">
+    <div class="player-info-left">
+        <div class="logo-placeholder"></div>
+    </div>
+<div class="player-name-group">
+    <div class="player-name">{{ pitcher_name }}</div>
+    <div class="player-subtitle">Trackman Pitching Report</div>
+</div>
+    <div class="player-info-right">
+        <div class="date-info">{{ date }}</div>
+    </div>
+</div>
+    
+    <div class="summary-section">
+        <h2 class="summary-header">Performance Summary by Pitch Type</h2>
+        <div class="stats-container">
+            <table class="summary-table">
+                <thead>
+                    <tr>
+                        <th>Pitch Type</th>
+                        <th>Count</th>
+                        <th>Velocity<br>(mph)</th>
+                        <th>Spin<br>(rpm)</th>
+                        <th>IVB<br>(in)</th>
+                        <th>HB<br>(in)</th>
+                        <th>RelSide<br>(ft)</th>
+                        <th>RelHeight<br>(ft)</th>
+                        <th>Extension<br>(ft)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pitch_type in summary_stats.pitch_type_breakdown %}
+                    <tr>
+                        <td class="pitch-type-name">{{ pitch_type.name }}</td>
+                        <td class="pitch-count">{{ pitch_type.count }}</td>
+                        <td class="velocity-cell">{{ pitch_type.avg_velocity }}</td>
+                        <td class="spin-cell">{{ pitch_type.avg_spin }}</td>
+                        <td class="ivb-cell">{{ pitch_type.avg_ivb }}</td>
+                        <td class="hb-cell">{{ pitch_type.avg_hb }}</td>
+                        <td class="release-cell">{{ pitch_type.avg_rel_side }}</td>
+                        <td class="release-cell">{{ pitch_type.avg_rel_height }}</td>
+                        <td class="extension-cell">{{ pitch_type.avg_extension }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div class="details-section">
+        <h2 class="section-header">Detailed Pitch Analysis</h2>
+        <table class="pitch-table">
+            <thead>
+                <tr>
+                    <th>Pitch #</th>
+                    <th>Type</th>
+                    <th>Velocity<br>(mph)</th>
+                    <th>Spin Rate<br>(rpm)</th>
+                    <th>Vertical Break<br>(inches)</th>
+                    <th>Horizontal Break<br>(inches)</th>
+                    <th>Release Height<br>(feet)</th>
+                    <th>Release Side<br>(feet)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for pitch in pitch_data %}
+                <tr>
+                    <td>
+                        <div class="pitch-number">{{ pitch.PitchNo or loop.index }}</div>
+                    </td>
+                    <td>
+                        <span class="pitch-type">{{ pitch.TaggedPitchType or 'N/A' }}</span>
+                    </td>
+                    <td>
+                        {% if pitch.RelSpeed %}
+                            <span class="{% if pitch.RelSpeed > 90 %}velocity-high{% elif pitch.RelSpeed > 82 %}velocity-medium{% else %}velocity-low{% endif %}">
+                                {{ "%.1f"|format(pitch.RelSpeed) }}
+                            </span>
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if pitch.SpinRate %}
+                            <span class="{% if pitch.SpinRate > 2200 %}spin-rate-high{% endif %}">
+                                {{ "%.0f"|format(pitch.SpinRate) }}
+                            </span>
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if pitch.InducedVertBreak %}
+                            <span class="{% if pitch.InducedVertBreak > 0 %}break-positive{% else %}break-negative{% endif %}">
+                                {{ "%.1f"|format(pitch.InducedVertBreak) }}
+                            </span>
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if pitch.HorzBreak %}
+                            <span class="{% if pitch.HorzBreak > 0 %}break-positive{% else %}break-negative{% endif %}">
+                                {{ "%.1f"|format(pitch.HorzBreak) }}
+                            </span>
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                    <td>{{ "%.1f"|format(pitch.RelHeight) if pitch.RelHeight else 'N/A' }}</td>
+                    <td>{{ "%.1f"|format(pitch.RelSide) if pitch.RelSide else 'N/A' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+<div class="footer">
+  <img src="static/pbr.png" alt="PBR Logo" class="footer-logo">
+  <span class="footer-text">{{ pitcher_name }}</span>
+  <span class="footer-date">{{ date }}</span>
+</div>
+
+
+
+
+</body>
+</html>
