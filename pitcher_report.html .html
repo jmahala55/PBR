@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pitching Performance Report</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: white;
+            color: #333;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #2c3e50;
+            padding-bottom: 20px;
+        }
+        
+        .header h1 {
+            color: #2c3e50;
+            font-size: 28px;
+            margin: 0;
+            font-weight: bold;
+        }
+        
+        .player-info {
+            color: #34495e;
+            font-size: 18px;
+            margin: 10px 0;
+        }
+        
+        .date-info {
+            color: #7f8c8d;
+            font-size: 14px;
+            margin: 5px 0;
+        }
+        
+        .summary-section {
+            background-color: #f8f9fa;
+            border-left: 4px solid #3498db;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .summary-section h2 {
+            color: #2c3e50;
+            margin-top: 0;
+            font-size: 20px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 15px 0;
+        }
+        
+        .stat-item {
+            background: white;
+            padding: 12px;
+            border-radius: 5px;
+            border: 1px solid #e1e8ed;
+        }
+        
+        .stat-label {
+            font-weight: bold;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+        
+        .stat-value {
+            color: #3498db;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .pitch-types {
+            grid-column: span 2;
+        }
+        
+        .details-section {
+            margin: 30px 0;
+        }
+        
+        .details-section h2 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            font-size: 20px;
+        }
+        
+        .pitch-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .pitch-table th {
+            background-color: #2c3e50;
+            color: white;
+            padding: 12px 8px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        
+        .pitch-table td {
+            padding: 10px 8px;
+            text-align: center;
+            border-bottom: 1px solid #e1e8ed;
+            font-size: 11px;
+        }
+        
+        .pitch-table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        .pitch-table tr:hover {
+            background-color: #e3f2fd;
+        }
+        
+        .velocity-high {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        
+        .velocity-medium {
+            color: #f39c12;
+            font-weight: bold;
+        }
+        
+        .velocity-low {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #ecf0f1;
+            color: #7f8c8d;
+        }
+        
+        .footer p {
+            margin: 5px 0;
+        }
+        
+        .logo-section {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        .team-logo {
+            font-size: 24px;
+            color: #2c3e50;
+            font-weight: bold;
+        }
+        
+        @media print {
+            body {
+                margin: 0;
+                padding: 15px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+            
+            .pitch-table {
+                font-size: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="logo-section">
+        <div class="team-logo">⚾ BASEBALL ANALYTICS</div>
+    </div>
+    
+    <div class="header">
+        <h1>Pitching Performance Report</h1>
+        <div class="player-info">{{ pitcher_name }}</div>
+        <div class="date-info">{{ date }}</div>
+    </div>
+    
+    <div class="summary-section">
+        <h2>Performance Summary</h2>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-label">Total Pitches</div>
+                <div class="stat-value">{{ summary_stats.total_pitches }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Average Velocity</div>
+                <div class="stat-value">{{ summary_stats.avg_speed }} mph</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Max Velocity</div>
+                <div class="stat-value">{{ summary_stats.max_speed }} mph</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Average Spin Rate</div>
+                <div class="stat-value">{{ summary_stats.avg_spin }} rpm</div>
+            </div>
+            <div class="stat-item pitch-types">
+                <div class="stat-label">Pitch Types Used</div>
+                <div class="stat-value">{{ summary_stats.pitch_types }}</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="details-section">
+        <h2>Detailed Pitch Analysis</h2>
+        <table class="pitch-table">
+            <thead>
+                <tr>
+                    <th>Pitch #</th>
+                    <th>Type</th>
+                    <th>Velocity<br>(mph)</th>
+                    <th>Spin Rate<br>(rpm)</th>
+                    <th>Vertical Break<br>(inches)</th>
+                    <th>Horizontal Break<br>(inches)</th>
+                    <th>Release Height<br>(feet)</th>
+                    <th>Release Side<br>(feet)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for pitch in pitch_data %}
+                <tr>
+                    <td>{{ pitch.PitchNo or 'N/A' }}</td>
+                    <td>{{ pitch.TaggedPitchType or 'N/A' }}</td>
+                    <td class="{% if pitch.RelSpeed and pitch.RelSpeed > 95 %}velocity-high{% elif pitch.RelSpeed and pitch.RelSpeed > 85 %}velocity-medium{% else %}velocity-low{% endif %}">
+                        {{ "%.1f"|format(pitch.RelSpeed) if pitch.RelSpeed else 'N/A' }}
+                    </td>
+                    <td>{{ "%.0f"|format(pitch.SpinRate) if pitch.SpinRate else 'N/A' }}</td>
+                    <td>{{ "%.1f"|format(pitch.InducedVertBreak) if pitch.InducedVertBreak else 'N/A' }}</td>
+                    <td>{{ "%.1f"|format(pitch.HorzBreak) if pitch.HorzBreak else 'N/A' }}</td>
+                    <td>{{ "%.1f"|format(pitch.RelHeight) if pitch.RelHeight else 'N/A' }}</td>
+                    <td>{{ "%.1f"|format(pitch.RelSide) if pitch.RelSide else 'N/A' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="footer">
+        <p><strong>Keep up the excellent work!</strong></p>
+        <p>Coaching Staff</p>
+        <p style="font-size: 12px; margin-top: 15px;">
+            This report was generated on {{ date }} and contains detailed analysis of your pitching performance.
+            Use this data to identify strengths and areas for improvement in your training.
+        </p>
+    </div>
+</body>
+</html>
