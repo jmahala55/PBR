@@ -303,20 +303,46 @@
             font-weight: 500;
         }
         
-        .comparison-indicator {
-            position: absolute;
-            top: 2px;
-            right: 2px;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            font-size: 6px;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+              .comparison-indicator {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    font-size: 10px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.25);
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+.comparison-indicator::before {
+    content: "↑";
+    margin-top: -2px;  /* Move arrow up by 1px */
+}
+
+.comparison-indicator.above-average {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+}
+
+.comparison-indicator.below-average {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+}
+
+.comparison-indicator.below-average::before {
+    content: "↓";
+    margin-top: -2px;  /* Move arrow up by 1px */
+}
         
+.metric-value {
+    color: #000000 !important;
+    font-weight: 700 !important;
+}
         .velocity-cell {
             color: #e11d48 !important;
         }
@@ -818,90 +844,83 @@
                         
                         {% if pitch_type.has_college_data %}
                         <!-- Velocity Comparison -->
-                        <td class="velocity-cell comparison-cell">
+                        <td class="metric-value comparison-cell">
                             <span class="player-value">{{ pitch_type.avg_velocity }}</span>
                             <span class="college-value">{{ summary_stats.comparison_level }}{% if summary_stats.pitcher_throws %} {% if summary_stats.pitcher_throws == 'Right' %}RHP{% else %}LHP{% endif %}{% endif %}: {{ pitch_type.college_velocity }}</span>
                             {% if pitch_type.velocity_comp %}
                                 <div class="comparison-indicator {% if pitch_type.velocity_comp.better %}above-average{% else %}below-average{% endif %}">
-                                    {% if pitch_type.velocity_comp.better %}↑{% else %}↓{% endif %}
-                                </div>
+</div>
                             {% endif %}
                         </td>
                         
                         <!-- Spin Rate Comparison -->
-                        <td class="spin-cell comparison-cell">
+                        <td class="metric-value comparison-cell">
                             <span class="player-value">{{ pitch_type.avg_spin }}</span>
                             <span class="college-value">{{ summary_stats.comparison_level }}{% if summary_stats.pitcher_throws %} {% if summary_stats.pitcher_throws == 'Right' %}RHP{% else %}LHP{% endif %}{% endif %}: {{ pitch_type.college_spin }}</span>
                             {% if pitch_type.spin_comp %}
-                                <div class="comparison-indicator {% if pitch_type.spin_comp.better %}above-average{% else %}below-average{% endif %}">
-                                    {% if pitch_type.spin_comp.better %}↑{% else %}↓{% endif %}
-                                </div>
+                                <div class="comparison-indicator {% if pitch_type.velocity_comp.better %}above-average{% else %}below-average{% endif %}">
+</div>
                             {% endif %}
                         </td>
                         
                         <!-- IVB Comparison -->
-                        <td class="ivb-cell comparison-cell">
+                        <td class="metric-value comparison-cell">
                             <span class="player-value">{{ pitch_type.avg_ivb }}</span>
                             <span class="college-value">{{ summary_stats.comparison_level }}{% if summary_stats.pitcher_throws %} {% if summary_stats.pitcher_throws == 'Right' %}RHP{% else %}LHP{% endif %}{% endif %}: {{ pitch_type.college_ivb }}</span>
                             {% if pitch_type.ivb_comp %}
-                                <div class="comparison-indicator {% if pitch_type.ivb_comp.better %}above-average{% else %}below-average{% endif %}">
-                                    {% if pitch_type.ivb_comp.better %}↑{% else %}↓{% endif %}
-                                </div>
+                                <div class="comparison-indicator {% if pitch_type.velocity_comp.better %}above-average{% else %}below-average{% endif %}">
+</div>
                             {% endif %}
                         </td>
                         
                         <!-- HB Comparison -->
-                        <td class="hb-cell comparison-cell">
+                        <td class="metric-value comparison-cell">
                             <span class="player-value">{{ pitch_type.avg_hb }}</span>
                             <span class="college-value">{{ summary_stats.comparison_level }}{% if summary_stats.pitcher_throws %} {% if summary_stats.pitcher_throws == 'Right' %}RHP{% else %}LHP{% endif %}{% endif %}: {{ pitch_type.college_hb }}</span>
                             {% if pitch_type.hb_comp %}
-                                <div class="comparison-indicator {% if pitch_type.hb_comp.better %}above-average{% else %}below-average{% endif %}">
-                                    {% if pitch_type.hb_comp.better %}↑{% else %}↓{% endif %}
-                                </div>
+                                <div class="comparison-indicator {% if pitch_type.velocity_comp.better %}above-average{% else %}below-average{% endif %}">
+</div>
                             {% endif %}
                         </td>
                         
                         <!-- RelSide Comparison -->
-                        <td class="release-cell comparison-cell">
+                        <td class="metric-value comparison-cell">
                             <span class="player-value">{{ pitch_type.avg_rel_side }}</span>
                             <span class="college-value">{{ summary_stats.comparison_level }}{% if summary_stats.pitcher_throws %} {% if summary_stats.pitcher_throws == 'Right' %}RHP{% else %}LHP{% endif %}{% endif %}: {{ pitch_type.college_rel_side }}</span>
                             {% if pitch_type.rel_side_comp %}
-                                <div class="comparison-indicator {% if pitch_type.rel_side_comp.better %}above-average{% else %}below-average{% endif %}">
-                                    {% if pitch_type.rel_side_comp.better %}↑{% else %}↓{% endif %}
-                                </div>
+                                <div class="comparison-indicator {% if pitch_type.velocity_comp.better %}above-average{% else %}below-average{% endif %}">
+</div>
                             {% endif %}
                         </td>
                         
                         <!-- RelHeight Comparison -->
-                        <td class="release-cell comparison-cell">
+                        <td class="metric-value comparison-cell">
                             <span class="player-value">{{ pitch_type.avg_rel_height }}</span>
                             <span class="college-value">{{ summary_stats.comparison_level }}{% if summary_stats.pitcher_throws %} {% if summary_stats.pitcher_throws == 'Right' %}RHP{% else %}LHP{% endif %}{% endif %}: {{ pitch_type.college_rel_height }}</span>
                             {% if pitch_type.rel_height_comp %}
-                                <div class="comparison-indicator {% if pitch_type.rel_height_comp.better %}above-average{% else %}below-average{% endif %}">
-                                    {% if pitch_type.rel_height_comp.better %}↑{% else %}↓{% endif %}
-                                </div>
+                                <div class="comparison-indicator {% if pitch_type.velocity_comp.better %}above-average{% else %}below-average{% endif %}">
+</div>
                             {% endif %}
                         </td>
                         
                         <!-- Extension Comparison -->
-                        <td class="extension-cell comparison-cell">
+                        <td class="metric-value comparison-cell">
                             <span class="player-value">{{ pitch_type.avg_extension }}</span>
                             <span class="college-value">{{ summary_stats.comparison_level }}{% if summary_stats.pitcher_throws %} {% if summary_stats.pitcher_throws == 'Right' %}RHP{% else %}LHP{% endif %}{% endif %}: {{ pitch_type.college_extension }}</span>
                             {% if pitch_type.extension_comp %}
-                                <div class="comparison-indicator {% if pitch_type.extension_comp.better %}above-average{% else %}below-average{% endif %}">
-                                    {% if pitch_type.extension_comp.better %}↑{% else %}↓{% endif %}
-                                </div>
+                                <div class="comparison-indicator {% if pitch_type.velocity_comp.better %}above-average{% else %}below-average{% endif %}">
+</div>
                             {% endif %}
                         </td>
                         {% else %}
                         <!-- No comparison data available -->
-                        <td class="velocity-cell">{{ pitch_type.avg_velocity }}</td>
-                        <td class="spin-cell">{{ pitch_type.avg_spin }}</td>
-                        <td class="ivb-cell">{{ pitch_type.avg_ivb }}</td>
-                        <td class="hb-cell">{{ pitch_type.avg_hb }}</td>
-                        <td class="release-cell">{{ pitch_type.avg_rel_side }}</td>
-                        <td class="release-cell">{{ pitch_type.avg_rel_height }}</td>
-                        <td class="extension-cell">{{ pitch_type.avg_extension }}</td>
+                        <td class="metric-value">{{ pitch_type.avg_velocity }}</td>
+                        <td class="metric-value">{{ pitch_type.avg_spin }}</td>
+                        <td class="metric-value">{{ pitch_type.avg_ivb }}</td>
+                        <td class="metric-value">{{ pitch_type.avg_hb }}</td>
+                        <td class="metric-value">{{ pitch_type.avg_rel_side }}</td>
+                        <td class="metric-value">{{ pitch_type.avg_rel_height }}</td>
+                        <td class="metric-value">{{ pitch_type.avg_extension }}</td>
                         {% endif %}
                     </tr>
                     {% endfor %}
@@ -919,7 +938,7 @@
                     <th>Type</th>
                     <th>Velocity<br>(mph)</th>
                     <th>Spin Rate<br>(rpm)</th>
-                    <th>Vertical Break<br>(inches)</th>
+                    <th>Induced Vertical Break<br>(inches)</th>
                     <th>Horizontal Break<br>(inches)</th>
                     <th>Release Height<br>(feet)</th>
                     <th>Release Side<br>(feet)</th>
@@ -992,7 +1011,7 @@
                     <th>Type</th>
                     <th>Velocity<br>(mph)</th>
                     <th>Spin Rate<br>(rpm)</th>
-                    <th>Vertical Break<br>(inches)</th>
+                    <th>Induced Vertical Break<br>(inches)</th>
                     <th>Horizontal Break<br>(inches)</th>
                     <th>Release Height<br>(feet)</th>
                     <th>Release Side<br>(feet)</th>
@@ -1054,7 +1073,7 @@
     </div>
     {% endif %}
     
-    <!-- Enhanced Multi-Level College Comparison with Two Columns -->
+<!-- Enhanced Multi-Level College Comparison with Two Columns -->
     {% if multi_level_stats %}
     {% for pitch_type in multi_level_stats %}
     
@@ -1063,162 +1082,162 @@
     <div style="page-break-before: always;"></div>
     {% endif %}
     
-    <div class="details-section" style="margin-top: 0px;">
-        <h2 class="section-header">{{ pitch_type.name }} College Level Comparisons (D1, D2, D3)</h2>
+  <div class="details-section" style="margin-top: 0px;">
+    <h2 class="section-header">{{ pitch_type.name }} College Level Comparisons (D1, D2, D3)</h2>
+    
+    <div class="pitch-comparison-card" style="max-width: 100%; margin: 0;">
+        <div class="pitch-card-header">
+            {{ pitch_type.name }} ({{ pitch_type.count }} pitches)
+        </div>
         
-        <div class="pitch-comparison-card" style="max-width: 100%; margin: 0;">
-            <div class="pitch-card-header">
-                {{ pitch_type.name }} ({{ pitch_type.count }} pitches)
-            </div>
-            
-            <div class="metrics-grid">
-                <!-- Left Column -->
-                <div class="metrics-column">
-                    <!-- Velocity Comparison -->
-                    <div class="metric-comparison">
-                        <div class="metric-name">Velocity (mph)</div>
-                        <div class="player-value-large">{{ pitch_type.pitcher_velocity }}</div>
-                        <div class="level-comparisons">
-                            {% for level in ['D1', 'D2', 'D3'] %}
-                            <div class="level-badge {% if pitch_type.level_comparisons[level].velocity.comparison %}{% if pitch_type.level_comparisons[level].velocity.comparison.better %}above{% else %}below{% endif %}{% else %}neutral{% endif %}">
-                                <div class="level-name">{{ level }}</div>
-                                <div>{{ pitch_type.level_comparisons[level].velocity.college_avg }}</div>
-                                {% if pitch_type.level_comparisons[level].velocity.comparison %}
-                                <div class="percentage-diff">{{ pitch_type.level_comparisons[level].velocity.percentile }}</div>
-                                {% endif %}
-                            </div>
-                            {% endfor %}
+        <div class="metrics-grid">
+            <!-- Left Column -->
+            <div class="metrics-column">
+                <!-- Velocity Comparison -->
+                <div class="metric-comparison">
+                    <div class="metric-name">Velocity (mph)</div>
+                    <div class="player-value-large">{{ pitch_type.pitcher_velocity }}</div>
+                    <div class="level-comparisons">
+                        {% for level in ['D1', 'D2', 'D3'] %}
+                        <div class="level-badge {% if pitch_type.level_comparisons[level].velocity.comparison %}{% if pitch_type.level_comparisons[level].velocity.comparison.better %}above{% else %}below{% endif %}{% else %}neutral{% endif %}">
+                            <div class="level-name">{{ level }}</div>
+                            <div>{{ pitch_type.level_comparisons[level].velocity.college_avg }}</div>
+                            {% if pitch_type.level_comparisons[level].velocity.comparison %}
+                            <div class="percentage-diff">{{ pitch_type.level_comparisons[level].velocity.difference }}</div>
+                            {% endif %}
                         </div>
-                    </div>
-                    
-                    <!-- Spin Rate Comparison -->
-                    <div class="metric-comparison">
-                        <div class="metric-name">Spin Rate (rpm)</div>
-                        <div class="player-value-large">{{ pitch_type.pitcher_spin }}</div>
-                        <div class="level-comparisons">
-                            {% for level in ['D1', 'D2', 'D3'] %}
-                            <div class="level-badge {% if pitch_type.level_comparisons[level].spin.comparison %}{% if pitch_type.level_comparisons[level].spin.comparison.better %}above{% else %}below{% endif %}{% else %}neutral{% endif %}">
-                                <div class="level-name">{{ level }}</div>
-                                <div>{{ pitch_type.level_comparisons[level].spin.college_avg }}</div>
-                                {% if pitch_type.level_comparisons[level].spin.comparison %}
-                                <div class="percentage-diff">{{ pitch_type.level_comparisons[level].spin.percentile }}</div>
-                                {% endif %}
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    
-                    <!-- IVB Comparison -->
-                    <div class="metric-comparison">
-                        <div class="metric-name">Induced Vertical Break (in)</div>
-                        <div class="player-value-large">{{ pitch_type.pitcher_ivb }}</div>
-                        <div class="level-comparisons">
-                            {% for level in ['D1', 'D2', 'D3'] %}
-                            <div class="level-badge {% if pitch_type.level_comparisons[level].ivb.comparison %}{% if pitch_type.level_comparisons[level].ivb.comparison.better %}above{% else %}below{% endif %}{% else %}neutral{% endif %}">
-                                <div class="level-name">{{ level }}</div>
-                                <div>{{ pitch_type.level_comparisons[level].ivb.college_avg }}</div>
-                                {% if pitch_type.level_comparisons[level].ivb.comparison %}
-                                <div class="percentage-diff">{{ pitch_type.level_comparisons[level].ivb.percentile }}</div>
-                                {% endif %}
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    
-                    <!-- HB Comparison -->
-                    <div class="metric-comparison">
-                        <div class="metric-name">Horizontal Break (in)</div>
-                        <div class="player-value-large">{{ pitch_type.pitcher_hb }}</div>
-                        <div class="level-comparisons">
-                            {% for level in ['D1', 'D2', 'D3'] %}
-                            <div class="level-badge {% if pitch_type.level_comparisons[level].hb.comparison %}{% if pitch_type.level_comparisons[level].hb.comparison.better %}above{% else %}below{% endif %}{% else %}neutral{% endif %}">
-                                <div class="level-name">{{ level }}</div>
-                                <div>{{ pitch_type.level_comparisons[level].hb.college_avg }}</div>
-                                {% if pitch_type.level_comparisons[level].hb.comparison %}
-                                <div class="percentage-diff">{{ pitch_type.level_comparisons[level].hb.percentile }}</div>
-                                {% endif %}
-                            </div>
-                            {% endfor %}
-                        </div>
+                        {% endfor %}
                     </div>
                 </div>
                 
-                <!-- Vertical Divider -->
-                <div class="vertical-divider"></div>
+                <!-- Spin Rate Comparison -->
+                <div class="metric-comparison">
+                    <div class="metric-name">Spin Rate (rpm)</div>
+                    <div class="player-value-large">{{ pitch_type.pitcher_spin }}</div>
+                    <div class="level-comparisons">
+                        {% for level in ['D1', 'D2', 'D3'] %}
+                        <div class="level-badge {% if pitch_type.level_comparisons[level].spin.comparison %}{% if pitch_type.level_comparisons[level].spin.comparison.better %}above{% else %}below{% endif %}{% else %}neutral{% endif %}">
+                            <div class="level-name">{{ level }}</div>
+                            <div>{{ pitch_type.level_comparisons[level].spin.college_avg }}</div>
+                            {% if pitch_type.level_comparisons[level].spin.comparison %}
+                            <div class="percentage-diff">{{ pitch_type.level_comparisons[level].spin.difference }}</div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
                 
-                <!-- Right Column -->
-                <div class="metrics-column">
-                    <!-- Max Velocity Comparison -->
-                    <div class="metric-comparison">
-                        <div class="metric-name">Max Velocity (mph)</div>
-                        <div class="player-value-large">{{ pitch_type.pitcher_max_velocity }}</div>
-                        <div class="level-comparisons">
-                            {% for level in ['D1', 'D2', 'D3'] %}
-                            <div class="level-badge {% if pitch_type.level_comparisons[level].max_velocity.comparison %}{% if pitch_type.level_comparisons[level].max_velocity.comparison.better %}above{% else %}below{% endif %}{% else %}neutral{% endif %}">
-                                <div class="level-name">{{ level }}</div>
-                                <div>{{ pitch_type.level_comparisons[level].max_velocity.college_avg }}</div>
-                                {% if pitch_type.level_comparisons[level].max_velocity.comparison %}
-                                <div class="percentage-diff">{{ pitch_type.level_comparisons[level].max_velocity.percentile }}</div>
-                                {% endif %}
-                            </div>
-                            {% endfor %}
+                <!-- IVB Comparison -->
+                <div class="metric-comparison">
+                    <div class="metric-name">Induced Vertical Break (in)</div>
+                    <div class="player-value-large">{{ pitch_type.pitcher_ivb }}</div>
+                    <div class="level-comparisons">
+                        {% for level in ['D1', 'D2', 'D3'] %}
+                        <div class="level-badge {% if pitch_type.level_comparisons[level].ivb.comparison %}{% if pitch_type.level_comparisons[level].ivb.comparison.better %}above{% else %}below{% endif %}{% else %}neutral{% endif %}">
+                            <div class="level-name">{{ level }}</div>
+                            <div>{{ pitch_type.level_comparisons[level].ivb.college_avg }}</div>
+                            {% if pitch_type.level_comparisons[level].ivb.comparison %}
+                            <div class="percentage-diff">{{ pitch_type.level_comparisons[level].ivb.difference }}</div>
+                            {% endif %}
                         </div>
+                        {% endfor %}
                     </div>
-                    
-                    <!-- Release Height Comparison -->
-                    <div class="metric-comparison">
-                        <div class="metric-name">Release Height (ft)</div>
-                        <div class="player-value-large">{{ pitch_type.pitcher_rel_height }}</div>
-                        <div class="level-comparisons">
-                            {% for level in ['D1', 'D2', 'D3'] %}
-                            <div class="level-badge {% if pitch_type.level_comparisons[level].rel_height.comparison %}{% if pitch_type.level_comparisons[level].rel_height.comparison.better %}above{% else %}below{% endif %}{% else %}neutral{% endif %}">
-                                <div class="level-name">{{ level }}</div>
-                                <div>{{ pitch_type.level_comparisons[level].rel_height.college_avg }}</div>
-                                {% if pitch_type.level_comparisons[level].rel_height.comparison %}
-                                <div class="percentage-diff">{{ pitch_type.level_comparisons[level].rel_height.percentile }}</div>
-                                {% endif %}
-                            </div>
-                            {% endfor %}
+                </div>
+                
+                <!-- HB Comparison -->
+                <div class="metric-comparison">
+                    <div class="metric-name">Horizontal Break (in)</div>
+                    <div class="player-value-large">{{ pitch_type.pitcher_hb }}</div>
+                    <div class="level-comparisons">
+                        {% for level in ['D1', 'D2', 'D3'] %}
+                        <div class="level-badge {% if pitch_type.level_comparisons[level].hb.comparison %}{% if pitch_type.level_comparisons[level].hb.comparison.better %}above{% else %}below{% endif %}{% else %}neutral{% endif %}">
+                            <div class="level-name">{{ level }}</div>
+                            <div>{{ pitch_type.level_comparisons[level].hb.college_avg }}</div>
+                            {% if pitch_type.level_comparisons[level].hb.comparison %}
+                            <div class="percentage-diff">{{ pitch_type.level_comparisons[level].hb.difference }}</div>
+                            {% endif %}
                         </div>
+                        {% endfor %}
                     </div>
-                    
-                    <!-- Release Side Comparison -->
-                    <div class="metric-comparison">
-                        <div class="metric-name">Release Side (ft)</div>
-                        <div class="player-value-large">{{ pitch_type.pitcher_rel_side }}</div>
-                        <div class="level-comparisons">
-                            {% for level in ['D1', 'D2', 'D3'] %}
-                            <div class="level-badge {% if pitch_type.level_comparisons[level].rel_side.comparison %}{% if pitch_type.level_comparisons[level].rel_side.comparison.better %}above{% else %}below{% endif %}{% else %}neutral{% endif %}">
-                                <div class="level-name">{{ level }}</div>
-                                <div>{{ pitch_type.level_comparisons[level].rel_side.college_avg }}</div>
-                                {% if pitch_type.level_comparisons[level].rel_side.comparison %}
-                                <div class="percentage-diff">{{ pitch_type.level_comparisons[level].rel_side.percentile }}</div>
-                                {% endif %}
-                            </div>
-                            {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Vertical Divider -->
+            <div class="vertical-divider"></div>
+            
+            <!-- Right Column -->
+            <div class="metrics-column">
+                <!-- Max Velocity Comparison -->
+                <div class="metric-comparison">
+                    <div class="metric-name">Max Velocity (mph)</div>
+                    <div class="player-value-large">{{ pitch_type.pitcher_max_velocity }}</div>
+                    <div class="level-comparisons">
+                        {% for level in ['D1', 'D2', 'D3'] %}
+                        <div class="level-badge {% if pitch_type.level_comparisons[level].max_velocity.comparison %}{% if pitch_type.level_comparisons[level].max_velocity.comparison.better %}above{% else %}below{% endif %}{% else %}neutral{% endif %}">
+                            <div class="level-name">{{ level }}</div>
+                            <div>{{ pitch_type.level_comparisons[level].max_velocity.college_avg }}</div>
+                            {% if pitch_type.level_comparisons[level].max_velocity.comparison %}
+                            <div class="percentage-diff">{{ pitch_type.level_comparisons[level].max_velocity.difference }}</div>
+                            {% endif %}
                         </div>
+                        {% endfor %}
                     </div>
-                    
-                    <!-- Extension Comparison -->
-                    <div class="metric-comparison">
-                        <div class="metric-name">Extension (ft)</div>
-                        <div class="player-value-large">{{ pitch_type.pitcher_extension }}</div>
-                        <div class="level-comparisons">
-                            {% for level in ['D1', 'D2', 'D3'] %}
-                            <div class="level-badge {% if pitch_type.level_comparisons[level].extension.comparison %}{% if pitch_type.level_comparisons[level].extension.comparison.better %}above{% else %}below{% endif %}{% else %}neutral{% endif %}">
-                                <div class="level-name">{{ level }}</div>
-                                <div>{{ pitch_type.level_comparisons[level].extension.college_avg }}</div>
-                                {% if pitch_type.level_comparisons[level].extension.comparison %}
-                                <div class="percentage-diff">{{ pitch_type.level_comparisons[level].extension.percentile }}</div>
-                                {% endif %}
-                            </div>
-                            {% endfor %}
+                </div>
+                
+                <!-- Release Height Comparison -->
+                <div class="metric-comparison">
+                    <div class="metric-name">Release Height (ft)</div>
+                    <div class="player-value-large">{{ pitch_type.pitcher_rel_height }}</div>
+                    <div class="level-comparisons">
+                        {% for level in ['D1', 'D2', 'D3'] %}
+                        <div class="level-badge {% if pitch_type.level_comparisons[level].rel_height.comparison %}{% if pitch_type.level_comparisons[level].rel_height.comparison.better %}above{% else %}below{% endif %}{% else %}neutral{% endif %}">
+                            <div class="level-name">{{ level }}</div>
+                            <div>{{ pitch_type.level_comparisons[level].rel_height.college_avg }}</div>
+                            {% if pitch_type.level_comparisons[level].rel_height.comparison %}
+                            <div class="percentage-diff">{{ pitch_type.level_comparisons[level].rel_height.difference }}</div>
+                            {% endif %}
                         </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Release Side Comparison -->
+                <div class="metric-comparison">
+                    <div class="metric-name">Release Side (ft)</div>
+                    <div class="player-value-large">{{ pitch_type.pitcher_rel_side }}</div>
+                    <div class="level-comparisons">
+                        {% for level in ['D1', 'D2', 'D3'] %}
+                        <div class="level-badge {% if pitch_type.level_comparisons[level].rel_side.comparison %}{% if pitch_type.level_comparisons[level].rel_side.comparison.better %}above{% else %}below{% endif %}{% else %}neutral{% endif %}">
+                            <div class="level-name">{{ level }}</div>
+                            <div>{{ pitch_type.level_comparisons[level].rel_side.college_avg }}</div>
+                            {% if pitch_type.level_comparisons[level].rel_side.comparison %}
+                            <div class="percentage-diff">{{ pitch_type.level_comparisons[level].rel_side.difference }}</div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Extension Comparison -->
+                <div class="metric-comparison">
+                    <div class="metric-name">Extension (ft)</div>
+                    <div class="player-value-large">{{ pitch_type.pitcher_extension }}</div>
+                    <div class="level-comparisons">
+                        {% for level in ['D1', 'D2', 'D3'] %}
+                        <div class="level-badge {% if pitch_type.level_comparisons[level].extension.comparison %}{% if pitch_type.level_comparisons[level].extension.comparison.better %}above{% else %}below{% endif %}{% else %}neutral{% endif %}">
+                            <div class="level-name">{{ level }}</div>
+                            <div>{{ pitch_type.level_comparisons[level].extension.college_avg }}</div>
+                            {% if pitch_type.level_comparisons[level].extension.comparison %}
+                            <div class="percentage-diff">{{ pitch_type.level_comparisons[level].extension.difference }}</div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
     
     {% endfor %}
     {% endif %}

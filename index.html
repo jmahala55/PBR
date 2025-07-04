@@ -71,6 +71,29 @@
             cursor: not-allowed;
         }
         
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .individual-btn {
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+        }
+        
+        .individual-btn:hover {
+            background: linear-gradient(135deg, #229954 0%, #1e8449 100%);
+        }
+        
+        .bulk-btn {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        }
+        
+        .bulk-btn:hover {
+            background: linear-gradient(135deg, #2980b9 0%, #21618c 100%);
+        }
+        
         .comparison-info {
             background: #e8f4fd;
             border: 1px solid #3498db;
@@ -83,6 +106,34 @@
         .comparison-info h3 {
             margin-top: 0;
             color: #2980b9;
+        }
+        
+        .prospect-info {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        
+        .prospect-info h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        
+        .prospect-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .prospect-detail {
+            background: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid #e2e8f0;
         }
         
         .loading, .error, .success {
@@ -191,14 +242,24 @@
         </div>
         
         <div class="form-group">
-            <label for="pitcherSelect">Select Pitcher (Optional):</label>
-            <select id="pitcherSelect" disabled>
+            <label for="prospectSelect">Select Prospect (Individual Report):</label>
+            <select id="prospectSelect" disabled>
                 <option value="">Select a date first</option>
             </select>
         </div>
         
-        <div class="form-group">
-            <button id="sendEmailBtn" onclick="sendEmails()" disabled>Send Emails to All Pitchers with College Comparisons</button>
+        <div id="selectedProspectInfo" class="prospect-info" style="display: none;">
+            <h3>Selected Prospect Details</h3>
+            <div id="prospectDetails" class="prospect-details"></div>
+        </div>
+        
+        <div class="button-group">
+            <button id="sendIndividualBtn" class="individual-btn" onclick="sendIndividualEmail()" disabled>
+                Send Report to Selected Prospect
+            </button>
+            <button id="sendBulkBtn" class="bulk-btn" onclick="sendBulkEmails()" disabled>
+                Send Reports to All Matched Prospects
+            </button>
         </div>
         
         <div id="loading" class="loading" style="display: none;">
@@ -210,11 +271,6 @@
         
         <div id="stats" class="stats-section"></div>
         
-        <div id="pitcher-details" class="pitcher-details" style="display: none;">
-            <h3>Pitcher Details</h3>
-            <div id="details-content"></div>
-        </div>
-        
         <div id="email-results" class="email-results" style="display: none;">
             <div id="email-summary"></div>
             <div id="email-details"></div>
@@ -224,19 +280,21 @@
     <script>
         // Global variables
         let currentDate = '';
-        let currentPitchers = [];
+        let currentProspects = [];
+        let selectedProspect = null;
         
         // DOM elements
         const dateSelect = document.getElementById('dateSelect');
-        const pitcherSelect = document.getElementById('pitcherSelect');
+        const prospectSelect = document.getElementById('prospectSelect');
         const comparisonSelect = document.getElementById('comparisonSelect');
-        const sendEmailBtn = document.getElementById('sendEmailBtn');
+        const sendIndividualBtn = document.getElementById('sendIndividualBtn');
+        const sendBulkBtn = document.getElementById('sendBulkBtn');
         const loading = document.getElementById('loading');
         const error = document.getElementById('error');
         const success = document.getElementById('success');
         const statsDiv = document.getElementById('stats');
-        const pitcherDetails = document.getElementById('pitcher-details');
-        const detailsContent = document.getElementById('details-content');
+        const selectedProspectInfo = document.getElementById('selectedProspectInfo');
+        const prospectDetails = document.getElementById('prospectDetails');
         const emailResults = document.getElementById('email-results');
         const emailSummary = document.getElementById('email-summary');
         const emailDetails = document.getElementById('email-details');
@@ -284,34 +342,18 @@
             }
         }
         
-        async function fetchPitchers(date) {
+        async function fetchMatchedProspects(date) {
             try {
-                const response = await fetch(`/api/pitchers?date=${encodeURIComponent(date)}`);
+                const response = await fetch(`/api/matched-prospects?date=${encodeURIComponent(date)}`);
                 const data = await response.json();
                 
                 if (data.error) {
                     throw new Error(data.error);
                 }
                 
-                return data.pitchers;
+                return data.prospects;
             } catch (err) {
-                console.error('Error fetching pitchers:', err);
-                throw err;
-            }
-        }
-        
-        async function fetchPitcherDetails(date, pitcher) {
-            try {
-                const response = await fetch(`/api/pitcher-details?date=${encodeURIComponent(date)}&pitcher=${encodeURIComponent(pitcher)}`);
-                const data = await response.json();
-                
-                if (data.error) {
-                    throw new Error(data.error);
-                }
-                
-                return data.pitch_data;
-            } catch (err) {
-                console.error('Error fetching pitcher details:', err);
+                console.error('Error fetching matched prospects:', err);
                 throw err;
             }
         }
@@ -332,7 +374,35 @@
             }
         }
         
-        async function sendEmailsToAll(date, comparisonLevel) {
+        async function sendIndividualEmailAPI(date, prospectName, prospectEmail, comparisonLevel) {
+            try {
+                const response = await fetch('/api/send-individual-email', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        date: date,
+                        pitcher_name: prospectName,
+                        pitcher_email: prospectEmail,
+                        comparison_level: comparisonLevel 
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                return data;
+            } catch (err) {
+                console.error('Error sending individual email:', err);
+                throw err;
+            }
+        }
+        
+        async function sendBulkEmailsAPI(date, comparisonLevel) {
             try {
                 const response = await fetch('/api/send-emails', {
                     method: 'POST',
@@ -353,7 +423,7 @@
                 
                 return data;
             } catch (err) {
-                console.error('Error sending emails:', err);
+                console.error('Error sending bulk emails:', err);
                 throw err;
             }
         }
@@ -369,15 +439,33 @@
             });
         }
         
-        function populatePitcherSelect(pitchers) {
-            pitcherSelect.innerHTML = '<option value="">Select a pitcher...</option>';
-            pitchers.forEach(pitcher => {
+        function populateProspectSelect(prospects) {
+            prospectSelect.innerHTML = '<option value="">Select a prospect...</option>';
+            prospects.forEach((prospect, index) => {
                 const option = document.createElement('option');
-                option.value = pitcher;
-                option.textContent = pitcher;
-                pitcherSelect.appendChild(option);
+                option.value = index;
+                option.textContent = `${prospect.name} (${prospect.email})`;
+                prospectSelect.appendChild(option);
             });
-            pitcherSelect.disabled = false;
+            prospectSelect.disabled = false;
+        }
+        
+        function displayProspectDetails(prospect) {
+            prospectDetails.innerHTML = `
+                <div class="prospect-detail">
+                    <strong>Name:</strong> ${prospect.name}
+                </div>
+                <div class="prospect-detail">
+                    <strong>Email:</strong> ${prospect.email}
+                </div>
+                <div class="prospect-detail">
+                    <strong>Event:</strong> ${prospect.event || 'N/A'}
+                </div>
+                <div class="prospect-detail">
+                    <strong>Type:</strong> ${prospect.type || 'N/A'}
+                </div>
+            `;
+            selectedProspectInfo.style.display = 'block';
         }
         
         function displayStats(stats) {
@@ -394,67 +482,15 @@
             `;
         }
         
-        function displayPitcherDetails(pitchData, pitcherName) {
-            if (pitchData.length === 0) {
-                detailsContent.innerHTML = '<p>No pitch data found for this pitcher.</p>';
-                return;
-            }
-            
-            // Calculate basic stats
-            const totalPitches = pitchData.length;
-            const avgSpeed = pitchData.reduce((sum, pitch) => sum + (pitch.RelSpeed || 0), 0) / totalPitches;
-            const pitchTypes = [...new Set(pitchData.map(pitch => pitch.TaggedPitchType).filter(Boolean))];
-            
-            let html = `
-                <h4>${pitcherName}</h4>
-                <p>Total Pitches: ${totalPitches}</p>
-                <p>Average Velocity: ${avgSpeed.toFixed(1)} mph</p>
-                <p>Pitch Types: ${pitchTypes.length}</p>
-                
-                <table class="detail-table">
-                    <thead>
-                        <tr>
-                            <th>Pitch #</th>
-                            <th>Type</th>
-                            <th>Velocity</th>
-                            <th>Spin Rate</th>
-                            <th>Vert Break</th>
-                            <th>Horz Break</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-            
-            pitchData.forEach(pitch => {
-                html += `
-                    <tr>
-                        <td>${pitch.PitchNo || 'N/A'}</td>
-                        <td>${pitch.TaggedPitchType || 'N/A'}</td>
-                        <td>${pitch.RelSpeed ? pitch.RelSpeed.toFixed(1) : 'N/A'}</td>
-                        <td>${pitch.SpinRate ? pitch.SpinRate.toFixed(0) : 'N/A'}</td>
-                        <td>${pitch.InducedVertBreak ? pitch.InducedVertBreak.toFixed(1) : 'N/A'}</td>
-                        <td>${pitch.HorzBreak ? pitch.HorzBreak.toFixed(1) : 'N/A'}</td>
-                    </tr>
-                `;
-            });
-            
-            html += `
-                    </tbody>
-                </table>
-            `;
-            
-            detailsContent.innerHTML = html;
-            pitcherDetails.style.display = 'block';
-        }
-        
         // Event handlers
         dateSelect.addEventListener('change', async (e) => {
             const selectedDate = e.target.value;
             if (!selectedDate) {
-                pitcherSelect.disabled = true;
-                pitcherSelect.innerHTML = '<option value="">Select a date first</option>';
-                pitcherDetails.style.display = 'none';
-                sendEmailBtn.disabled = true;
+                prospectSelect.disabled = true;
+                prospectSelect.innerHTML = '<option value="">Select a date first</option>';
+                selectedProspectInfo.style.display = 'none';
+                sendIndividualBtn.disabled = true;
+                sendBulkBtn.disabled = true;
                 return;
             }
             
@@ -463,33 +499,47 @@
             hideMessages();
             
             try {
-                const pitchers = await fetchPitchers(selectedDate);
-                currentPitchers = pitchers;
+                const prospects = await fetchMatchedProspects(selectedDate);
+                currentProspects = prospects;
                 
-                populatePitcherSelect(pitchers);
+                populateProspectSelect(prospects);
                 
-                // Enable send email button
-                sendEmailBtn.disabled = false;
+                // Enable bulk send button
+                sendBulkBtn.disabled = false;
                 
-                showSuccess(`Found ${pitchers.length} unique pitchers for ${selectedDate}`);
+                showSuccess(`Found ${prospects.length} matched prospects for ${selectedDate}`);
             } catch (err) {
-                showError(`Error loading pitchers: ${err.message}`);
-                pitcherSelect.disabled = true;
-                sendEmailBtn.disabled = true;
+                showError(`Error loading prospects: ${err.message}`);
+                prospectSelect.disabled = true;
+                sendBulkBtn.disabled = true;
             } finally {
                 hideLoading();
             }
         });
         
-        // Send emails function
-        async function sendEmails() {
-            if (!currentDate) {
-                showError('Please select a date first');
+        prospectSelect.addEventListener('change', (e) => {
+            const selectedIndex = e.target.value;
+            if (!selectedIndex) {
+                selectedProspectInfo.style.display = 'none';
+                sendIndividualBtn.disabled = true;
+                selectedProspect = null;
+                return;
+            }
+            
+            selectedProspect = currentProspects[parseInt(selectedIndex)];
+            displayProspectDetails(selectedProspect);
+            sendIndividualBtn.disabled = false;
+        });
+        
+        // Send individual email function
+        async function sendIndividualEmail() {
+            if (!currentDate || !selectedProspect) {
+                showError('Please select a date and prospect first');
                 return;
             }
             
             const comparisonLevel = comparisonSelect.value;
-            const confirmMessage = `Are you sure you want to send emails to all matched pitchers for ${currentDate} with ${comparisonLevel} comparisons?`;
+            const confirmMessage = `Are you sure you want to send a report to ${selectedProspect.name} (${selectedProspect.email}) with ${comparisonLevel} comparisons?`;
             
             if (!confirm(confirmMessage)) {
                 return;
@@ -497,31 +547,81 @@
             
             showLoading();
             hideMessages();
-            sendEmailBtn.disabled = true;
+            sendIndividualBtn.disabled = true;
             
             try {
-                const result = await sendEmailsToAll(currentDate, comparisonLevel);
+                const result = await sendIndividualEmailAPI(currentDate, selectedProspect.name, selectedProspect.email, comparisonLevel);
                 
                 if (result.success) {
-                    displayEmailResults(result);
-                    showSuccess(`Emails sent with ${comparisonLevel} comparisons! See detailed results below.`);
+                    displayIndividualEmailResult(result);
+                    showSuccess(`Report sent successfully to ${selectedProspect.name}!`);
                 } else {
-                    showError('Failed to send emails');
+                    showError(result.error || 'Failed to send report');
                 }
             } catch (err) {
-                showError(`Error sending emails: ${err.message}`);
+                showError(`Error sending report: ${err.message}`);
             } finally {
                 hideLoading();
-                sendEmailBtn.disabled = false;
+                sendIndividualBtn.disabled = false;
             }
         }
         
-        function displayEmailResults(result) {
+        // Send bulk emails function
+        async function sendBulkEmails() {
+            if (!currentDate) {
+                showError('Please select a date first');
+                return;
+            }
+            
+            const comparisonLevel = comparisonSelect.value;
+            const confirmMessage = `Are you sure you want to send reports to all matched prospects for ${currentDate} with ${comparisonLevel} comparisons?`;
+            
+            if (!confirm(confirmMessage)) {
+                return;
+            }
+            
+            showLoading();
+            hideMessages();
+            sendBulkBtn.disabled = true;
+            
+            try {
+                const result = await sendBulkEmailsAPI(currentDate, comparisonLevel);
+                
+                if (result.success) {
+                    displayBulkEmailResults(result);
+                    showSuccess(`Bulk emails sent with ${comparisonLevel} comparisons! See detailed results below.`);
+                } else {
+                    showError('Failed to send bulk emails');
+                }
+            } catch (err) {
+                showError(`Error sending bulk emails: ${err.message}`);
+            } finally {
+                hideLoading();
+                sendBulkBtn.disabled = false;
+            }
+        }
+        
+        function displayIndividualEmailResult(result) {
+            emailSummary.innerHTML = `
+                <h3>Individual Email Result</h3>
+                <p><strong>Prospect:</strong> ${result.pitcher_name}</p>
+                <p><strong>Email:</strong> ${result.email}</p>
+                <p><strong>Date:</strong> ${result.date}</p>
+                <p><strong>Pitch Count:</strong> ${result.pitch_count}</p>
+                <p><strong>Comparison Level:</strong> ${result.comparison_level}</p>
+                <p><strong>Status:</strong> <span style="color: green; font-weight: bold;">✓ Sent Successfully</span></p>
+            `;
+            
+            emailDetails.innerHTML = '';
+            emailResults.style.display = 'block';
+        }
+        
+        function displayBulkEmailResults(result) {
             const summary = result.summary;
             
             // Display summary with comparison level info
             emailSummary.innerHTML = `
-                <h3>Email Results Summary</h3>
+                <h3>Bulk Email Results Summary</h3>
                 <h4>${summary.emails_sent_successfully}/${summary.total_prospects_in_info} emails sent with ${summary.comparison_level} comparisons</h4>
                 <p><strong>Comparison Level:</strong> ${summary.comparison_level}</p>
                 <p><strong>Total Prospects:</strong> ${summary.total_prospects_in_info}</p>
@@ -567,35 +667,6 @@
             
             emailDetails.innerHTML = detailsHtml;
             emailResults.style.display = 'block';
-        }
-        
-        pitcherSelect.addEventListener('change', async (e) => {
-            const selectedPitcher = e.target.value;
-            if (!selectedPitcher) {
-                pitcherDetails.style.display = 'none';
-                return;
-            }
-            
-            loadPitcherDetails(selectedPitcher);
-        });
-        
-        async function loadPitcherDetails(pitcherName) {
-            if (!currentDate) return;
-            
-            showLoading();
-            hideMessages();
-            
-            try {
-                const pitchData = await fetchPitcherDetails(currentDate, pitcherName);
-                displayPitcherDetails(pitchData, pitcherName);
-                
-                // Update pitcher select to show selected pitcher
-                pitcherSelect.value = pitcherName;
-            } catch (err) {
-                showError(`Error loading pitcher details: ${err.message}`);
-            } finally {
-                hideLoading();
-            }
         }
         
         // Initialize the application
