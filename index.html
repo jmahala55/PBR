@@ -4,53 +4,221 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pitcher Query Tool</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #34495e;
+        }
+        
+        select, button {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #bdc3c7;
+            border-radius: 5px;
+            font-size: 16px;
+            background: white;
+        }
+        
+        select:focus, button:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 10px;
+        }
+        
+        button:hover {
+            background: linear-gradient(135deg, #2980b9 0%, #21618c 100%);
+        }
+        
+        button:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+        }
+        
+        .comparison-info {
+            background: #e8f4fd;
+            border: 1px solid #3498db;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        .comparison-info h3 {
+            margin-top: 0;
+            color: #2980b9;
+        }
+        
+        .loading, .error, .success {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        
+        .loading {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            color: #495057;
+        }
+        
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .stats-section, .email-results {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .stats-section h3, .email-results h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        th {
+            background: #e9ecef;
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .pitcher-details {
+            margin-top: 30px;
+        }
+        
+        .detail-table {
+            font-size: 12px;
+        }
+        
+        .detail-table th {
+            background: #2c3e50;
+            color: white;
+        }
+    </style>
 </head>
 <body>
-    <h1>Pitcher Query Tool</h1>
-    
-    <div>
-        <label for="dateSelect">Select Date:</label>
-        <select id="dateSelect">
-            <option value="">Loading dates...</option>
-        </select>
-    </div>
-    
-    <div>
-        <label for="pitcherSelect">Select Pitcher (Optional):</label>
-        <select id="pitcherSelect" disabled>
-            <option value="">Select a date first</option>
-        </select>
-    </div>
-    
-    <div>
-        <button id="sendEmailBtn" onclick="sendEmails()" disabled>Send Emails to All Pitchers</button>
-    </div>
-    
-    <div id="loading" style="display: none;">
-        <p>Loading...</p>
-    </div>
-    
-    <div id="error" style="display: none; color: red;"></div>
-    <div id="success" style="display: none; color: green;"></div>
-    
-    <div id="stats"></div>
-    
-    <h2>Unique Pitchers</h2>
-    <div id="pitchers-list"></div>
-    
-    <div id="pitcher-details" style="display: none;">
-        <h3>Pitcher Details</h3>
-        <div id="details-content"></div>
-    </div>
-    
-    <div id="email-results" style="display: none;">
-        <div id="email-summary"></div>
-        <div id="email-details"></div>
-    </div>
-    
-    <div id="email-results" style="display: none;">
-        <div id="email-summary"></div>
-        <div id="email-details"></div>
+    <div class="container">
+        <h1>Pitcher Query Tool</h1>
+        
+        <div class="form-group">
+            <label for="dateSelect">Select Date:</label>
+            <select id="dateSelect">
+                <option value="">Loading dates...</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="comparisonSelect">College Comparison Level:</label>
+            <select id="comparisonSelect">
+                <option value="D1">Division I (D1)</option>
+                <option value="D2">Division II (D2)</option>
+                <option value="D3">Division III (D3)</option>
+                <option value="SEC">SEC Conference Only</option>
+            </select>
+        </div>
+        
+        <div class="comparison-info">
+            <h3>College Baseball Comparisons</h3>
+            <p>Reports will include comparisons to college baseball averages based on your selection:</p>
+            <ul>
+                <li><strong>D1, D2, D3:</strong> Compares to all teams in that division level</li>
+                <li><strong>SEC:</strong> Compares specifically to SEC conference teams (highest level)</li>
+            </ul>
+            <p>The PDF report will show pitcher values alongside college averages with visual indicators for above/below average performance.</p>
+        </div>
+        
+        <div class="form-group">
+            <label for="pitcherSelect">Select Pitcher (Optional):</label>
+            <select id="pitcherSelect" disabled>
+                <option value="">Select a date first</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <button id="sendEmailBtn" onclick="sendEmails()" disabled>Send Emails to All Pitchers with College Comparisons</button>
+        </div>
+        
+        <div id="loading" class="loading" style="display: none;">
+            <p>Loading...</p>
+        </div>
+        
+        <div id="error" class="error" style="display: none;"></div>
+        <div id="success" class="success" style="display: none;"></div>
+        
+        <div id="stats" class="stats-section"></div>
+        
+        <div id="pitcher-details" class="pitcher-details" style="display: none;">
+            <h3>Pitcher Details</h3>
+            <div id="details-content"></div>
+        </div>
+        
+        <div id="email-results" class="email-results" style="display: none;">
+            <div id="email-summary"></div>
+            <div id="email-details"></div>
+        </div>
     </div>
 
     <script>
@@ -61,12 +229,12 @@
         // DOM elements
         const dateSelect = document.getElementById('dateSelect');
         const pitcherSelect = document.getElementById('pitcherSelect');
+        const comparisonSelect = document.getElementById('comparisonSelect');
         const sendEmailBtn = document.getElementById('sendEmailBtn');
         const loading = document.getElementById('loading');
         const error = document.getElementById('error');
         const success = document.getElementById('success');
         const statsDiv = document.getElementById('stats');
-        const pitchersList = document.getElementById('pitchers-list');
         const pitcherDetails = document.getElementById('pitcher-details');
         const detailsContent = document.getElementById('details-content');
         const emailResults = document.getElementById('email-results');
@@ -164,14 +332,17 @@
             }
         }
         
-        async function sendEmailsToAll(date) {
+        async function sendEmailsToAll(date, comparisonLevel) {
             try {
                 const response = await fetch('/api/send-emails', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ date: date })
+                    body: JSON.stringify({ 
+                        date: date,
+                        comparison_level: comparisonLevel 
+                    })
                 });
                 
                 const data = await response.json();
@@ -209,10 +380,6 @@
             pitcherSelect.disabled = false;
         }
         
-        function displayPitchers(pitchers) {
-            // Remove this function content since we're not showing the pitchers list
-        }
-        
         function displayStats(stats) {
             const matching = stats.matching_stats;
             
@@ -244,7 +411,7 @@
                 <p>Average Velocity: ${avgSpeed.toFixed(1)} mph</p>
                 <p>Pitch Types: ${pitchTypes.length}</p>
                 
-                <table border="1">
+                <table class="detail-table">
                     <thead>
                         <tr>
                             <th>Pitch #</th>
@@ -286,8 +453,8 @@
             if (!selectedDate) {
                 pitcherSelect.disabled = true;
                 pitcherSelect.innerHTML = '<option value="">Select a date first</option>';
-                pitchersList.innerHTML = '';
                 pitcherDetails.style.display = 'none';
+                sendEmailBtn.disabled = true;
                 return;
             }
             
@@ -321,7 +488,10 @@
                 return;
             }
             
-            if (!confirm('Are you sure you want to send emails to all matched pitchers for this date?')) {
+            const comparisonLevel = comparisonSelect.value;
+            const confirmMessage = `Are you sure you want to send emails to all matched pitchers for ${currentDate} with ${comparisonLevel} comparisons?`;
+            
+            if (!confirm(confirmMessage)) {
                 return;
             }
             
@@ -330,11 +500,11 @@
             sendEmailBtn.disabled = true;
             
             try {
-                const result = await sendEmailsToAll(currentDate);
+                const result = await sendEmailsToAll(currentDate, comparisonLevel);
                 
                 if (result.success) {
                     displayEmailResults(result);
-                    showSuccess('Emails sent! See detailed results below.');
+                    showSuccess(`Emails sent with ${comparisonLevel} comparisons! See detailed results below.`);
                 } else {
                     showError('Failed to send emails');
                 }
@@ -349,9 +519,14 @@
         function displayEmailResults(result) {
             const summary = result.summary;
             
-            // Display simple summary - just the match ratio (use emails_sent_successfully)
+            // Display summary with comparison level info
             emailSummary.innerHTML = `
-                <h4>${summary.emails_sent_successfully}/${summary.total_prospects_in_info} Info Match</h4>
+                <h3>Email Results Summary</h3>
+                <h4>${summary.emails_sent_successfully}/${summary.total_prospects_in_info} emails sent with ${summary.comparison_level} comparisons</h4>
+                <p><strong>Comparison Level:</strong> ${summary.comparison_level}</p>
+                <p><strong>Total Prospects:</strong> ${summary.total_prospects_in_info}</p>
+                <p><strong>Successfully Sent:</strong> ${summary.emails_sent_successfully}</p>
+                <p><strong>Failed:</strong> ${summary.emails_failed}</p>
             `;
             
             // Display only successfully sent emails table
@@ -360,7 +535,7 @@
             if (result.sent_emails.length > 0) {
                 detailsHtml += `
                     <h4>Emails Successfully Sent (${result.sent_emails.length})</h4>
-                    <table border="1" style="width: 100%; margin-bottom: 20px;">
+                    <table>
                         <thead>
                             <tr style="background-color: #e8f5e8;">
                                 <th>Name</th>
@@ -368,6 +543,7 @@
                                 <th>Event</th>
                                 <th>Type</th>
                                 <th>Pitches</th>
+                                <th>Comparison</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -381,6 +557,7 @@
                             <td>${email.event || 'N/A'}</td>
                             <td>${email.type || 'N/A'}</td>
                             <td>${email.pitch_count}</td>
+                            <td>${email.comparison_level}</td>
                         </tr>
                     `;
                 });

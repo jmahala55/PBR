@@ -30,34 +30,34 @@
         
         /* Player Info Bar */
         .player-info {
-    display: grid;
-    grid-template-columns: 1fr 2fr 1fr;
-    align-items: center;
-    margin: 20px 0;
-    padding: 20px 30px;
-    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-    color: white;
-    border-radius: 10px;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.25);
-}
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            align-items: center;
+            margin: 20px 0;
+            padding: 20px 30px;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: white;
+            border-radius: 10px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+        }
 
-.player-info-left {
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-}
+        .player-info-left {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+        }
 
-.player-info-center {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
+        .player-info-center {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
 
-.player-info-right {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-}
+        .player-info-right {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+        }
         
         .player-name {
             font-size: 26px;
@@ -67,42 +67,108 @@
             text-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
         .player-name-group {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
 
-.player-subtitle {
-    font-size: 10px;
-    font-weight: 500;
-    color: rgba(255, 255, 255, 0.75);
-    margin-top: 4px;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-}
-.player-subtitle::after {
-    content: "";
-    display: block;
-    width: 100px; /* wider line */
-    height: 1.5px;
-    margin: 6px auto 0;
-    background-color: rgba(255, 255, 255, 0.25); /* lighter tone for cleaner look */
-    border-radius: 2px;
-}
+        .player-subtitle {
+            font-size: 10px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.75);
+            margin-top: 4px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .player-subtitle::after {
+            content: "";
+            display: block;
+            width: 100px;
+            height: 1.5px;
+            margin: 6px auto 0;
+            background-color: rgba(255, 255, 255, 0.25);
+            border-radius: 2px;
+        }
         
         .date-info {
-    font-size: 14px;
-    font-weight: 600;
-    color: white;
-    padding: 6px 14px;
-    background: linear-gradient(135deg, #1f2937, #4b5563);
-    border-radius: 9999px; /* pill shape */
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-    letter-spacing: 1px;
-    text-transform: uppercase;
-}
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+            padding: 6px 14px;
+            background: linear-gradient(135deg, #1f2937, #4b5563);
+            border-radius: 9999px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
         
-        /* Enhanced Summary Section */
+        /* Comparison Legend - Dynamic sizing */
+        .comparison-legend {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            font-size: 10px;
+        }
+        
+        .comparison-legend.compact {
+            padding: 8px 12px;
+            margin: 10px 0;
+            font-size: 8px;
+        }
+        
+        .legend-title {
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .legend-title.compact {
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+            font-size: 9px;
+        }
+        
+        .legend-item {
+            display: inline-block;
+            margin-right: 20px;
+            margin-bottom: 5px;
+        }
+        
+        .legend-item.compact {
+            margin-right: 15px;
+            margin-bottom: 3px;
+        }
+        
+        .legend-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 5px;
+            vertical-align: middle;
+        }
+        
+        .legend-indicator.compact {
+            width: 10px;
+            height: 10px;
+            margin-right: 4px;
+        }
+        
+        .above-average {
+            background: #10b981;
+            color: white;
+        }
+        
+        .below-average {
+            background: #ef4444;
+            color: white;
+        }
+        
+        /* Enhanced Summary Section - Dynamic sizing */
         .summary-section {
             background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
             border: 1px solid #e2e8f0;
@@ -110,6 +176,10 @@
             border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+        
+        .summary-section.compact {
+            margin: 15px 0;
         }
         
         .summary-header {
@@ -125,54 +195,21 @@
             text-shadow: 0 1px 3px rgba(0,0,0,0.5);
         }
         
+        .summary-header.compact {
+            font-size: 14px;
+            padding: 12px;
+            letter-spacing: 1px;
+        }
+        
         .stats-container {
             padding: 25px;
         }
         
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
+        .stats-container.compact {
+            padding: 15px;
         }
         
-        .stat-item {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            border: 1px solid #e2e8f0;
-            text-align: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .stat-item::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, #1a1a1a 0%, #2d2d2d 100%);
-        }
-        
-        .stat-label {
-            font-weight: 600;
-            color: #64748b;
-            font-size: 10px;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        
-        .stat-value {
-            color: #e11d48;
-            font-size: 20px;
-            font-weight: 700;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
-        }
-        
-        /* Summary Table Styling */
+        /* Summary Table Styling with Comparisons - Dynamic sizing */
         .summary-table {
             width: 100%;
             border-collapse: collapse;
@@ -180,27 +217,45 @@
             border-radius: 10px;
             overflow: hidden;
             box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-            font-size: 11px;
+            font-size: 10px;
+        }
+        
+        .summary-table.compact {
+            font-size: 8px; /* Smaller font for many pitch types */
         }
         
         .summary-table th {
             background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
             color: white;
-            padding: 14px 10px;
+            padding: 12px 8px;
             text-align: center;
             font-weight: 700;
-            font-size: 10px;
+            font-size: 9px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             border: none;
             text-shadow: 0 1px 2px rgba(0,0,0,0.5);
         }
         
+        .summary-table.compact th {
+            padding: 6px 4px; /* Reduced padding for compact mode */
+            font-size: 7px;
+            letter-spacing: 0.3px;
+            line-height: 1.2;
+        }
+        
         .summary-table td {
-            padding: 12px 10px;
+            padding: 10px 8px;
             text-align: center;
             border-bottom: 1px solid #f1f5f9;
             font-weight: 500;
+            font-size: 9px;
+        }
+        
+        .summary-table.compact td {
+            padding: 4px 3px; /* Very compact for many pitch types */
+            font-size: 7px;
+            line-height: 1.2;
         }
         
         .summary-table tr:nth-child(even) {
@@ -216,7 +271,7 @@
             color: #1e293b !important;
             text-transform: uppercase;
             letter-spacing: 1px;
-            font-size: 11px !important;
+            font-size: 10px !important;
             background: rgba(26,26,26,0.1) !important;
             border-radius: 6px;
         }
@@ -228,29 +283,63 @@
             border-radius: 4px;
         }
         
+        /* Comparison styling */
+        .comparison-cell {
+            position: relative;
+            padding: 8px 6px !important;
+        }
+        
+        .player-value {
+            display: block;
+            font-weight: 700;
+            font-size: 11px;
+            margin-bottom: 2px;
+        }
+        
+        .college-value {
+            display: block;
+            font-size: 8px;
+            color: #64748b;
+            font-weight: 500;
+        }
+        
+        .comparison-indicator {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            font-size: 6px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
         .velocity-cell {
-            font-weight: 600 !important;
             color: #e11d48 !important;
         }
         
         .spin-cell {
-            font-weight: 600 !important;
             color: #7c3aed !important;
         }
         
         .ivb-cell, .hb-cell {
-            font-weight: 600 !important;
             color: #059669 !important;
         }
         
         .release-cell, .extension-cell {
-            font-weight: 500 !important;
             color: #64748b !important;
         }
         
-        /* Enhanced Details Section */
+        /* Enhanced Details Section - Dynamic spacing based on pitch count */
         .details-section {
             margin: 30px 0;
+        }
+        
+        .details-section.first-page {
+            margin: 15px 0 10px 0; /* Reduced margins for first page */
         }
         
         .section-header {
@@ -267,72 +356,100 @@
             text-shadow: 0 1px 3px rgba(0,0,0,0.5);
         }
         
-        /* Ultra-Clean Table */
-        .pitch-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-            font-size: 10px;
+        .section-header.compact {
+            font-size: 16px;
+            margin-bottom: 15px;
+            padding: 12px 20px; /* Reduced padding for compact mode */
         }
         
-        .pitch-table th {
-            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-            color: white;
-            padding: 16px 12px;
-            text-align: center;
-            font-weight: 700;
-            font-size: 9px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            border: none;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-        }
-        
-        .pitch-table td {
-            padding: 14px 12px;
-            text-align: center;
-            border: none;
-            font-size: 10px;
-            font-weight: 500;
-            border-bottom: 1px solid #f1f5f9;
-        }
-        
-        .pitch-table tr:nth-child(even) {
-            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
-        }
-        
-        .pitch-table tr:nth-child(odd) {
-            background: white;
-        }
-        
-        /* Enhanced Pitch Numbers */
-        .pitch-number {
-            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%) !important;
-            color: white !important;
-            font-weight: 700;
-            border-radius: 50%;
-            width: 28px;
-            height: 28px;
-            line-height: 28px;
-            margin: 0 auto;
-            font-size: 10px;
-            box-shadow: 0 3px 8px rgba(0,0,0,0.3);
-            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-        }
-        
-        .pitch-type {
-            font-weight: 700;
-            color: #334155;
-            text-transform: uppercase;
-            font-size: 9px;
-            letter-spacing: 0.5px;
-            padding: 4px 8px;
-            border-radius: 6px;
-            background: rgba(26,26,26,0.1);
-        }
+/* Ultra-Clean Table - Dynamic sizing */
+.pitch-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    font-size: 10px;
+}
+
+.pitch-table.compact {
+    margin: 8px 0; /* Reduced margins for compact mode */
+    font-size: 9px; /* Smaller font for more rows */
+}
+
+.pitch-table th {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    color: white;
+    padding: 12px 10px; /* Slightly reduced from 14px 12px */
+    text-align: center;
+    font-weight: 700;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border: none;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+.pitch-table.compact th {
+    padding: 8px 6px; /* Slightly reduced padding for compact mode */
+    font-size: 8px;
+}
+
+.pitch-table td {
+    padding: 12px 10px; /* Slightly reduced from 14px 12px */
+    text-align: center;
+    border: none;
+    font-size: 10px;
+    font-weight: 500;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.pitch-table.compact td {
+    padding: 7px 5px; /* Slightly reduced padding for compact mode */
+    font-size: 9px;
+}
+
+.pitch-table tr:nth-child(even) {
+    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+}
+
+.pitch-table tr:nth-child(odd) {
+    background: white;
+}
+
+/* Enhanced Pitch Numbers - Dynamic sizing */
+.pitch-number {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%) !important;
+    color: white !important;
+    font-weight: 700;
+    border-radius: 50%;
+    width: 26px; /* Slightly reduced from 28px */
+    height: 26px; /* Slightly reduced from 28px */
+    line-height: 26px; /* Slightly reduced from 28px */
+    margin: 0 auto;
+    font-size: 10px; /* Kept the same */
+    box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+.pitch-table.compact .pitch-number {
+    width: 21px; /* Slightly reduced from 22px */
+    height: 21px; /* Slightly reduced from 22px */
+    line-height: 21px; /* Slightly reduced from 22px */
+    font-size: 9px; /* Kept the same */
+}
+
+.pitch-type {
+    font-weight: 700;
+    color: #334155;
+    text-transform: uppercase;
+    font-size: 9px;
+    letter-spacing: 0.5px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: rgba(26,26,26,0.1);
+}
         
         /* Enhanced Velocity Color Coding */
         .velocity-high {
@@ -399,7 +516,6 @@
             border-top: 1px solid rgba(255,255,255,0.08);
             box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.2);
             height: 20px;
-            width: 100%;
             margin: 0;
         }
 
@@ -423,7 +539,9 @@
 
         @media print {
             @page {
-       
+                margin: 0.4in;
+                size: A4 landscape;
+            }
             
             .footer {
                 position: fixed;
@@ -432,9 +550,66 @@
                 right: 0;
             }
             
+            body {
+                margin: 0;
+                padding: 0;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            
+            .header, .summary-section, .footer {
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+            
+            /* Each details section (pitch type) should be on its own page */
+            .details-section {
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+            
+            /* Prevent individual pitch comparison cards from breaking */
+            .pitch-comparison-card {
+                break-inside: avoid;
+                page-break-inside: avoid;
+                margin-bottom: 20px;
+            }
+            
+            .pitch-table {
+                font-size: 9px;
+                break-inside: auto;
+                page-break-inside: auto;
+            }
+            
+    .pitch-table th,
+    .pitch-table td {
+        padding: 8px 6px;  /* Reduced from 10px 8px for print */
+    }
+            
+            .stat-item:hover,
+            .pitch-table tr:hover {
+                transform: none;
+                background: inherit !important;
+            }
+            
+            
+            /* Ensure section headers don't get orphaned */
+            .section-header {
+                break-after: avoid;
+                page-break-after: avoid;
+            }
         }
-
-
+        
+        /* Additional PDF-specific styles */
+        .pitch-comparison-card {
+            min-height: 400px; /* Ensure cards have enough space for all content */
+            box-sizing: border-box;
+        }
+        
+        /* Page break utility */
+        .page-break {
+            page-break-before: always;
+        }
         
         /* Performance Badges */
         .performance-badge {
@@ -462,40 +637,128 @@
             color: white;
         }
         
-        /* Responsive and Print Optimizations */
-        @media print {
-            body {
-                margin: 0;
-                padding: 0;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
-            
-            .header, .summary-section, .details-section, .footer {
-                break-inside: avoid;
-                page-break-inside: avoid;
-            }
-            
-            .pitch-table {
-                font-size: 9px;
-            }
-            
-            .pitch-table th,
-            .pitch-table td {
-                padding: 10px 8px;
-            }
-            
-            .stat-item:hover,
-            .pitch-table tr:hover {
-                transform: none;
-                background: inherit !important;
-            }
-        }
-        
         /* Subtle animations */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Updated Multi-Level Comparison Styles */
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .pitch-comparison-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+        
+        .pitch-card-header {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: white;
+            padding: 10px 15px;
+            margin: -20px -20px 15px -20px;
+            border-radius: 10px 10px 0 0;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 11px;
+        }
+        
+        /* Two-column layout for metrics */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 2px 1fr;
+            gap: 15px;
+            align-items: start;
+        }
+        
+        .metrics-column {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding-left: 20px; /* Only shift college comparison content slightly right */
+        }
+        
+        .vertical-divider {
+            background: linear-gradient(to bottom, transparent, #e2e8f0, transparent);
+            width: 2px;
+            min-height: 200px;
+            margin: 0 10px;
+        }
+        
+        .metric-comparison {
+            padding-bottom: 12px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        
+        .metric-comparison:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        
+        .metric-name {
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 10px;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .player-value-large {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+        }
+        
+        .level-comparisons {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        .level-badge {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 6px 8px;
+            border-radius: 6px;
+            font-size: 8px;
+            min-width: 50px;
+            text-align: center;
+        }
+        
+        .level-badge.above {
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            color: white;
+        }
+        
+        .level-badge.below {
+            background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+            color: white;
+        }
+        
+        .level-badge.neutral {
+            background: #f1f5f9;
+            color: #64748b;
+        }
+        
+        .level-name {
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+        
+        .percentage-diff {
+            font-size: 7px;
+            opacity: 0.9;
         }
     </style>
 </head>
@@ -504,25 +767,42 @@
     <div class="player-info-left">
         <div class="logo-placeholder"></div>
     </div>
-<div class="player-name-group">
-    <div class="player-name">{{ pitcher_name }}</div>
-    <div class="player-subtitle">Trackman Pitching Report</div>
-</div>
+    <div class="player-name-group">
+        <div class="player-name">{{ pitcher_name }}</div>
+        <div class="player-subtitle">Trackman Pitching Report</div>
+    </div>
     <div class="player-info-right">
         <div class="date-info">{{ date }}</div>
     </div>
 </div>
+
+    {% if summary_stats.comparison_level %}
+    <div class="comparison-legend{% if summary_stats.pitch_type_breakdown|length >= 5 %} compact{% endif %}">
+        <div class="legend-title{% if summary_stats.pitch_type_breakdown|length >= 5 %} compact{% endif %}">College Baseball Comparison Legend</div>
+        <div class="legend-item{% if summary_stats.pitch_type_breakdown|length >= 5 %} compact{% endif %}">
+            <span class="legend-indicator above-average{% if summary_stats.pitch_type_breakdown|length >= 5 %} compact{% endif %}"></span>
+            Above {{ summary_stats.comparison_level }} Average
+        </div>
+        <div class="legend-item{% if summary_stats.pitch_type_breakdown|length >= 5 %} compact{% endif %}">
+            <span class="legend-indicator below-average{% if summary_stats.pitch_type_breakdown|length >= 5 %} compact{% endif %}"></span>
+            Below {{ summary_stats.comparison_level }} Average
+        </div>
+        <div style="margin-top: {% if summary_stats.pitch_type_breakdown|length >= 5 %}4px{% else %}8px{% endif %}; color: #64748b; font-size: {% if summary_stats.pitch_type_breakdown|length >= 5 %}7px{% else %}9px{% endif %};">
+            Player values shown in bold, {{ summary_stats.comparison_level }}{% if summary_stats.pitcher_throws %} {% if summary_stats.pitcher_throws == 'Right' %}RHP{% else %}LHP{% endif %}{% endif %} averages shown below in gray
+        </div>
+    </div>
+    {% endif %}
     
-    <div class="summary-section">
-        <h2 class="summary-header">Performance Summary by Pitch Type</h2>
-        <div class="stats-container">
-            <table class="summary-table">
+    <div class="summary-section{% if summary_stats.pitch_type_breakdown|length >= 5 %} compact{% endif %}">
+        <h2 class="summary-header{% if summary_stats.pitch_type_breakdown|length >= 5 %} compact{% endif %}">Performance Summary{% if summary_stats.comparison_level %} vs {{ summary_stats.comparison_level }}{% if summary_stats.pitcher_throws %} {% if summary_stats.pitcher_throws == 'Right' %}RHP{% else %}LHP{% endif %}{% endif %} College Baseball{% else %} by Pitch Type{% endif %}</h2>
+        <div class="stats-container{% if summary_stats.pitch_type_breakdown|length >= 5 %} compact{% endif %}">
+            <table class="summary-table{% if summary_stats.pitch_type_breakdown|length >= 5 %} compact{% endif %}">
                 <thead>
                     <tr>
                         <th>Pitch Type</th>
                         <th>Count</th>
                         <th>Velocity<br>(mph)</th>
-                        <th>Spin<br>(rpm)</th>
+                        <th>Spin Rate<br>(rpm)</th>
                         <th>IVB<br>(in)</th>
                         <th>HB<br>(in)</th>
                         <th>RelSide<br>(ft)</th>
@@ -535,6 +815,86 @@
                     <tr>
                         <td class="pitch-type-name">{{ pitch_type.name }}</td>
                         <td class="pitch-count">{{ pitch_type.count }}</td>
+                        
+                        {% if pitch_type.has_college_data %}
+                        <!-- Velocity Comparison -->
+                        <td class="velocity-cell comparison-cell">
+                            <span class="player-value">{{ pitch_type.avg_velocity }}</span>
+                            <span class="college-value">{{ summary_stats.comparison_level }}{% if summary_stats.pitcher_throws %} {% if summary_stats.pitcher_throws == 'Right' %}RHP{% else %}LHP{% endif %}{% endif %}: {{ pitch_type.college_velocity }}</span>
+                            {% if pitch_type.velocity_comp %}
+                                <div class="comparison-indicator {% if pitch_type.velocity_comp.better %}above-average{% else %}below-average{% endif %}">
+                                    {% if pitch_type.velocity_comp.better %}↑{% else %}↓{% endif %}
+                                </div>
+                            {% endif %}
+                        </td>
+                        
+                        <!-- Spin Rate Comparison -->
+                        <td class="spin-cell comparison-cell">
+                            <span class="player-value">{{ pitch_type.avg_spin }}</span>
+                            <span class="college-value">{{ summary_stats.comparison_level }}{% if summary_stats.pitcher_throws %} {% if summary_stats.pitcher_throws == 'Right' %}RHP{% else %}LHP{% endif %}{% endif %}: {{ pitch_type.college_spin }}</span>
+                            {% if pitch_type.spin_comp %}
+                                <div class="comparison-indicator {% if pitch_type.spin_comp.better %}above-average{% else %}below-average{% endif %}">
+                                    {% if pitch_type.spin_comp.better %}↑{% else %}↓{% endif %}
+                                </div>
+                            {% endif %}
+                        </td>
+                        
+                        <!-- IVB Comparison -->
+                        <td class="ivb-cell comparison-cell">
+                            <span class="player-value">{{ pitch_type.avg_ivb }}</span>
+                            <span class="college-value">{{ summary_stats.comparison_level }}{% if summary_stats.pitcher_throws %} {% if summary_stats.pitcher_throws == 'Right' %}RHP{% else %}LHP{% endif %}{% endif %}: {{ pitch_type.college_ivb }}</span>
+                            {% if pitch_type.ivb_comp %}
+                                <div class="comparison-indicator {% if pitch_type.ivb_comp.better %}above-average{% else %}below-average{% endif %}">
+                                    {% if pitch_type.ivb_comp.better %}↑{% else %}↓{% endif %}
+                                </div>
+                            {% endif %}
+                        </td>
+                        
+                        <!-- HB Comparison -->
+                        <td class="hb-cell comparison-cell">
+                            <span class="player-value">{{ pitch_type.avg_hb }}</span>
+                            <span class="college-value">{{ summary_stats.comparison_level }}{% if summary_stats.pitcher_throws %} {% if summary_stats.pitcher_throws == 'Right' %}RHP{% else %}LHP{% endif %}{% endif %}: {{ pitch_type.college_hb }}</span>
+                            {% if pitch_type.hb_comp %}
+                                <div class="comparison-indicator {% if pitch_type.hb_comp.better %}above-average{% else %}below-average{% endif %}">
+                                    {% if pitch_type.hb_comp.better %}↑{% else %}↓{% endif %}
+                                </div>
+                            {% endif %}
+                        </td>
+                        
+                        <!-- RelSide Comparison -->
+                        <td class="release-cell comparison-cell">
+                            <span class="player-value">{{ pitch_type.avg_rel_side }}</span>
+                            <span class="college-value">{{ summary_stats.comparison_level }}{% if summary_stats.pitcher_throws %} {% if summary_stats.pitcher_throws == 'Right' %}RHP{% else %}LHP{% endif %}{% endif %}: {{ pitch_type.college_rel_side }}</span>
+                            {% if pitch_type.rel_side_comp %}
+                                <div class="comparison-indicator {% if pitch_type.rel_side_comp.better %}above-average{% else %}below-average{% endif %}">
+                                    {% if pitch_type.rel_side_comp.better %}↑{% else %}↓{% endif %}
+                                </div>
+                            {% endif %}
+                        </td>
+                        
+                        <!-- RelHeight Comparison -->
+                        <td class="release-cell comparison-cell">
+                            <span class="player-value">{{ pitch_type.avg_rel_height }}</span>
+                            <span class="college-value">{{ summary_stats.comparison_level }}{% if summary_stats.pitcher_throws %} {% if summary_stats.pitcher_throws == 'Right' %}RHP{% else %}LHP{% endif %}{% endif %}: {{ pitch_type.college_rel_height }}</span>
+                            {% if pitch_type.rel_height_comp %}
+                                <div class="comparison-indicator {% if pitch_type.rel_height_comp.better %}above-average{% else %}below-average{% endif %}">
+                                    {% if pitch_type.rel_height_comp.better %}↑{% else %}↓{% endif %}
+                                </div>
+                            {% endif %}
+                        </td>
+                        
+                        <!-- Extension Comparison -->
+                        <td class="extension-cell comparison-cell">
+                            <span class="player-value">{{ pitch_type.avg_extension }}</span>
+                            <span class="college-value">{{ summary_stats.comparison_level }}{% if summary_stats.pitcher_throws %} {% if summary_stats.pitcher_throws == 'Right' %}RHP{% else %}LHP{% endif %}{% endif %}: {{ pitch_type.college_extension }}</span>
+                            {% if pitch_type.extension_comp %}
+                                <div class="comparison-indicator {% if pitch_type.extension_comp.better %}above-average{% else %}below-average{% endif %}">
+                                    {% if pitch_type.extension_comp.better %}↑{% else %}↓{% endif %}
+                                </div>
+                            {% endif %}
+                        </td>
+                        {% else %}
+                        <!-- No comparison data available -->
                         <td class="velocity-cell">{{ pitch_type.avg_velocity }}</td>
                         <td class="spin-cell">{{ pitch_type.avg_spin }}</td>
                         <td class="ivb-cell">{{ pitch_type.avg_ivb }}</td>
@@ -542,6 +902,7 @@
                         <td class="release-cell">{{ pitch_type.avg_rel_side }}</td>
                         <td class="release-cell">{{ pitch_type.avg_rel_height }}</td>
                         <td class="extension-cell">{{ pitch_type.avg_extension }}</td>
+                        {% endif %}
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -549,9 +910,9 @@
         </div>
     </div>
     
-    <div class="details-section">
-        <h2 class="section-header">Detailed Pitch Analysis</h2>
-        <table class="pitch-table">
+    <div class="details-section first-page">
+        <h2 class="section-header{% if pitch_data|length > 14 %} compact{% endif %}">Detailed Pitch Analysis</h2>
+        <table class="pitch-table{% if pitch_data|length > 14 %} compact{% endif %}">
             <thead>
                 <tr>
                     <th>Pitch #</th>
@@ -566,9 +927,10 @@
             </thead>
             <tbody>
                 {% for pitch in pitch_data %}
+                {% if pitch_data|length <= 20 or loop.index <= 14 %}
                 <tr>
                     <td>
-                        <div class="pitch-number">{{ pitch.PitchNo or loop.index }}</div>
+                        <div class="pitch-number">{{ loop.index }}</div>
                     </td>
                     <td>
                         <span class="pitch-type">{{ pitch.TaggedPitchType or 'N/A' }}</span>
@@ -612,19 +974,260 @@
                     <td>{{ "%.1f"|format(pitch.RelHeight) if pitch.RelHeight else 'N/A' }}</td>
                     <td>{{ "%.1f"|format(pitch.RelSide) if pitch.RelSide else 'N/A' }}</td>
                 </tr>
+                {% endif %}
                 {% endfor %}
             </tbody>
         </table>
     </div>
+    
+    <!-- Additional table for remaining pitches if more than 20 -->
+    {% if pitch_data|length > 20 %}
+    <div style="page-break-before: always;"></div>
+    <div class="details-section">
+        <h2 class="section-header">Detailed Pitch Analysis (Continued)</h2>
+        <table class="pitch-table">
+            <thead>
+                <tr>
+                    <th>Pitch #</th>
+                    <th>Type</th>
+                    <th>Velocity<br>(mph)</th>
+                    <th>Spin Rate<br>(rpm)</th>
+                    <th>Vertical Break<br>(inches)</th>
+                    <th>Horizontal Break<br>(inches)</th>
+                    <th>Release Height<br>(feet)</th>
+                    <th>Release Side<br>(feet)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for pitch in pitch_data %}
+                {% if loop.index > 14 %}
+                <tr>
+                    <td>
+                        <div class="pitch-number">{{ loop.index }}</div>
+                    </td>
+                    <td>
+                        <span class="pitch-type">{{ pitch.TaggedPitchType or 'N/A' }}</span>
+                    </td>
+                    <td>
+                        {% if pitch.RelSpeed %}
+                            <span class="{% if pitch.RelSpeed > 90 %}velocity-high{% elif pitch.RelSpeed > 82 %}velocity-medium{% else %}velocity-low{% endif %}">
+                                {{ "%.1f"|format(pitch.RelSpeed) }}
+                            </span>
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if pitch.SpinRate %}
+                            <span class="{% if pitch.SpinRate > 2200 %}spin-rate-high{% endif %}">
+                                {{ "%.0f"|format(pitch.SpinRate) }}
+                            </span>
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if pitch.InducedVertBreak %}
+                            <span class="{% if pitch.InducedVertBreak > 0 %}break-positive{% else %}break-negative{% endif %}">
+                                {{ "%.1f"|format(pitch.InducedVertBreak) }}
+                            </span>
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if pitch.HorzBreak %}
+                            <span class="{% if pitch.HorzBreak > 0 %}break-positive{% else %}break-negative{% endif %}">
+                                {{ "%.1f"|format(pitch.HorzBreak) }}
+                            </span>
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                    <td>{{ "%.1f"|format(pitch.RelHeight) if pitch.RelHeight else 'N/A' }}</td>
+                    <td>{{ "%.1f"|format(pitch.RelSide) if pitch.RelSide else 'N/A' }}</td>
+                </tr>
+                {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+    
+    <!-- Enhanced Multi-Level College Comparison with Two Columns -->
+    {% if multi_level_stats %}
+    {% for pitch_type in multi_level_stats %}
+    
+    <!-- Page break before each pitch type (except the first one) -->
+    {% if not loop.first %}
+    <div style="page-break-before: always;"></div>
+    {% endif %}
+    
+    <div class="details-section" style="margin-top: 0px;">
+        <h2 class="section-header">{{ pitch_type.name }} College Level Comparisons (D1, D2, D3)</h2>
+        
+        <div class="pitch-comparison-card" style="max-width: 100%; margin: 0;">
+            <div class="pitch-card-header">
+                {{ pitch_type.name }} ({{ pitch_type.count }} pitches)
+            </div>
+            
+            <div class="metrics-grid">
+                <!-- Left Column -->
+                <div class="metrics-column">
+                    <!-- Velocity Comparison -->
+                    <div class="metric-comparison">
+                        <div class="metric-name">Velocity (mph)</div>
+                        <div class="player-value-large">{{ pitch_type.pitcher_velocity }}</div>
+                        <div class="level-comparisons">
+                            {% for level in ['D1', 'D2', 'D3'] %}
+                            <div class="level-badge {% if pitch_type.level_comparisons[level].velocity.comparison %}{% if pitch_type.level_comparisons[level].velocity.comparison.better %}above{% else %}below{% endif %}{% else %}neutral{% endif %}">
+                                <div class="level-name">{{ level }}</div>
+                                <div>{{ pitch_type.level_comparisons[level].velocity.college_avg }}</div>
+                                {% if pitch_type.level_comparisons[level].velocity.comparison %}
+                                <div class="percentage-diff">{{ pitch_type.level_comparisons[level].velocity.percentile }}</div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <!-- Spin Rate Comparison -->
+                    <div class="metric-comparison">
+                        <div class="metric-name">Spin Rate (rpm)</div>
+                        <div class="player-value-large">{{ pitch_type.pitcher_spin }}</div>
+                        <div class="level-comparisons">
+                            {% for level in ['D1', 'D2', 'D3'] %}
+                            <div class="level-badge {% if pitch_type.level_comparisons[level].spin.comparison %}{% if pitch_type.level_comparisons[level].spin.comparison.better %}above{% else %}below{% endif %}{% else %}neutral{% endif %}">
+                                <div class="level-name">{{ level }}</div>
+                                <div>{{ pitch_type.level_comparisons[level].spin.college_avg }}</div>
+                                {% if pitch_type.level_comparisons[level].spin.comparison %}
+                                <div class="percentage-diff">{{ pitch_type.level_comparisons[level].spin.percentile }}</div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <!-- IVB Comparison -->
+                    <div class="metric-comparison">
+                        <div class="metric-name">Induced Vertical Break (in)</div>
+                        <div class="player-value-large">{{ pitch_type.pitcher_ivb }}</div>
+                        <div class="level-comparisons">
+                            {% for level in ['D1', 'D2', 'D3'] %}
+                            <div class="level-badge {% if pitch_type.level_comparisons[level].ivb.comparison %}{% if pitch_type.level_comparisons[level].ivb.comparison.better %}above{% else %}below{% endif %}{% else %}neutral{% endif %}">
+                                <div class="level-name">{{ level }}</div>
+                                <div>{{ pitch_type.level_comparisons[level].ivb.college_avg }}</div>
+                                {% if pitch_type.level_comparisons[level].ivb.comparison %}
+                                <div class="percentage-diff">{{ pitch_type.level_comparisons[level].ivb.percentile }}</div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <!-- HB Comparison -->
+                    <div class="metric-comparison">
+                        <div class="metric-name">Horizontal Break (in)</div>
+                        <div class="player-value-large">{{ pitch_type.pitcher_hb }}</div>
+                        <div class="level-comparisons">
+                            {% for level in ['D1', 'D2', 'D3'] %}
+                            <div class="level-badge {% if pitch_type.level_comparisons[level].hb.comparison %}{% if pitch_type.level_comparisons[level].hb.comparison.better %}above{% else %}below{% endif %}{% else %}neutral{% endif %}">
+                                <div class="level-name">{{ level }}</div>
+                                <div>{{ pitch_type.level_comparisons[level].hb.college_avg }}</div>
+                                {% if pitch_type.level_comparisons[level].hb.comparison %}
+                                <div class="percentage-diff">{{ pitch_type.level_comparisons[level].hb.percentile }}</div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Vertical Divider -->
+                <div class="vertical-divider"></div>
+                
+                <!-- Right Column -->
+                <div class="metrics-column">
+                    <!-- Max Velocity Comparison -->
+                    <div class="metric-comparison">
+                        <div class="metric-name">Max Velocity (mph)</div>
+                        <div class="player-value-large">{{ pitch_type.pitcher_max_velocity }}</div>
+                        <div class="level-comparisons">
+                            {% for level in ['D1', 'D2', 'D3'] %}
+                            <div class="level-badge {% if pitch_type.level_comparisons[level].max_velocity.comparison %}{% if pitch_type.level_comparisons[level].max_velocity.comparison.better %}above{% else %}below{% endif %}{% else %}neutral{% endif %}">
+                                <div class="level-name">{{ level }}</div>
+                                <div>{{ pitch_type.level_comparisons[level].max_velocity.college_avg }}</div>
+                                {% if pitch_type.level_comparisons[level].max_velocity.comparison %}
+                                <div class="percentage-diff">{{ pitch_type.level_comparisons[level].max_velocity.percentile }}</div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <!-- Release Height Comparison -->
+                    <div class="metric-comparison">
+                        <div class="metric-name">Release Height (ft)</div>
+                        <div class="player-value-large">{{ pitch_type.pitcher_rel_height }}</div>
+                        <div class="level-comparisons">
+                            {% for level in ['D1', 'D2', 'D3'] %}
+                            <div class="level-badge {% if pitch_type.level_comparisons[level].rel_height.comparison %}{% if pitch_type.level_comparisons[level].rel_height.comparison.better %}above{% else %}below{% endif %}{% else %}neutral{% endif %}">
+                                <div class="level-name">{{ level }}</div>
+                                <div>{{ pitch_type.level_comparisons[level].rel_height.college_avg }}</div>
+                                {% if pitch_type.level_comparisons[level].rel_height.comparison %}
+                                <div class="percentage-diff">{{ pitch_type.level_comparisons[level].rel_height.percentile }}</div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <!-- Release Side Comparison -->
+                    <div class="metric-comparison">
+                        <div class="metric-name">Release Side (ft)</div>
+                        <div class="player-value-large">{{ pitch_type.pitcher_rel_side }}</div>
+                        <div class="level-comparisons">
+                            {% for level in ['D1', 'D2', 'D3'] %}
+                            <div class="level-badge {% if pitch_type.level_comparisons[level].rel_side.comparison %}{% if pitch_type.level_comparisons[level].rel_side.comparison.better %}above{% else %}below{% endif %}{% else %}neutral{% endif %}">
+                                <div class="level-name">{{ level }}</div>
+                                <div>{{ pitch_type.level_comparisons[level].rel_side.college_avg }}</div>
+                                {% if pitch_type.level_comparisons[level].rel_side.comparison %}
+                                <div class="percentage-diff">{{ pitch_type.level_comparisons[level].rel_side.percentile }}</div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <!-- Extension Comparison -->
+                    <div class="metric-comparison">
+                        <div class="metric-name">Extension (ft)</div>
+                        <div class="player-value-large">{{ pitch_type.pitcher_extension }}</div>
+                        <div class="level-comparisons">
+                            {% for level in ['D1', 'D2', 'D3'] %}
+                            <div class="level-badge {% if pitch_type.level_comparisons[level].extension.comparison %}{% if pitch_type.level_comparisons[level].extension.comparison.better %}above{% else %}below{% endif %}{% else %}neutral{% endif %}">
+                                <div class="level-name">{{ level }}</div>
+                                <div>{{ pitch_type.level_comparisons[level].extension.college_avg }}</div>
+                                {% if pitch_type.level_comparisons[level].extension.comparison %}
+                                <div class="percentage-diff">{{ pitch_type.level_comparisons[level].extension.percentile }}</div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% endfor %}
+    {% endif %}
 
 <div class="footer">
   <img src="static/pbr.png" alt="PBR Logo" class="footer-logo">
   <span class="footer-text">{{ pitcher_name }}</span>
   <span class="footer-date">{{ date }}</span>
 </div>
-
-
-
 
 </body>
 </html>
