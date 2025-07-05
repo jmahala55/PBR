@@ -484,8 +484,115 @@ def get_matched_prospects():
         return jsonify({'error': str(e)}), 500
 
 
-def calculate_zone_rates(pitch_data):
-    """Calculate zone rates for each pitch type and overall"""
+def get_college_zone_rates(pitch_type, comparison_level='D1', pitcher_throws='Right'):
+    """Get college baseball zone rates for comparison"""
+    try:
+        # Determine the WHERE clause based on comparison level
+        if comparison_level == 'SEC':
+            level_filter = "League = 'SEC'"
+        elif comparison_level in ['D1', 'D2', 'D3']:
+            level_filter = f"Level = '{comparison_level}'"
+        else:
+            level_filter = "Level = 'D1'"  # Default to D1
+        
+        # Strike zone boundaries (same as your calculate_zone_rates function)
+        strike_zone_query = f"""
+        WITH zone_calculations AS (
+            SELECT 
+                CASE 
+                    WHEN PlateLocSide IS NOT NULL AND PlateLocHeight IS NOT NULL
+                    AND (-9.97/12) <= (-1 * PlateLocSide) AND (-1 * PlateLocSide) <= (9.97/12)
+                    AND (18.00/12) <= PlateLocHeight AND PlateLocHeight <= (40.53/12)
+                    THEN 1 
+                    ELSE 0 
+                END as in_zone
+            FROM `NCAABaseball.2025Final`
+            WHERE TaggedPitchType = @pitch_type
+            AND {level_filter}
+            AND PitcherThrows = @pitcher_throws
+            AND PlateLocSide IS NOT NULL
+            AND PlateLocHeight IS NOT NULL
+        )
+        SELECT 
+            AVG(in_zone) * 100 as avg_zone_rate,
+            COUNT(*) as pitch_count
+        FROM zone_calculations
+        """
+        
+        job_config = bigquery.QueryJobConfig(
+            query_parameters=[
+                bigquery.ScalarQueryParameter("pitch_type", "STRING", pitch_type),
+                bigquery.ScalarQueryParameter("pitcher_throws", "STRING", pitcher_throws),
+            ]
+        )
+        
+        result = client.query(strike_zone_query, job_config=job_config)
+        row = list(result)[0] if result else None
+        
+        if row and row.pitch_count > 0:
+            return {
+                'avg_zone_rate': float(row.avg_zone_rate) if row.avg_zone_rate else None,
+                'pitch_count': int(row.pitch_count)
+            }
+        return None
+        
+    except Exception as e:
+        print(f"Error getting college zone rates for {pitch_type} ({pitcher_throws}): {str(e)}")
+        return None
+
+def get_overall_college_zone_rate(comparison_level='D1', pitcher_throws='Right'):
+    """Get overall college baseball zone rate across all pitch types"""
+    try:
+        # Determine the WHERE clause based on comparison level
+        if comparison_level == 'SEC':
+            level_filter = "League = 'SEC'"
+        elif comparison_level in ['D1', 'D2', 'D3']:
+            level_filter = f"Level = '{comparison_level}'"
+        else:
+            level_filter = "Level = 'D1'"  # Default to D1
+        
+        # Overall zone rate query
+        overall_zone_query = f"""
+        WITH zone_calculations AS (
+            SELECT 
+                CASE 
+                    WHEN PlateLocSide IS NOT NULL AND PlateLocHeight IS NOT NULL
+                    AND (-9.97/12) <= (-1 * PlateLocSide) AND (-1 * PlateLocSide) <= (9.97/12)
+                    AND (18.00/12) <= PlateLocHeight AND PlateLocHeight <= (40.53/12)
+                    THEN 1 
+                    ELSE 0 
+                END as in_zone
+            FROM `NCAABaseball.2025Final`
+            WHERE {level_filter}
+            AND PitcherThrows = @pitcher_throws
+            AND PlateLocSide IS NOT NULL
+            AND PlateLocHeight IS NOT NULL
+        )
+        SELECT 
+            AVG(in_zone) * 100 as avg_zone_rate,
+            COUNT(*) as pitch_count
+        FROM zone_calculations
+        """
+        
+        job_config = bigquery.QueryJobConfig(
+            query_parameters=[
+                bigquery.ScalarQueryParameter("pitcher_throws", "STRING", pitcher_throws),
+            ]
+        )
+        
+        result = client.query(overall_zone_query, job_config=job_config)
+        row = list(result)[0] if result else None
+        
+        if row and row.pitch_count > 0:
+            return float(row.avg_zone_rate) if row.avg_zone_rate else None
+        return None
+        
+    except Exception as e:
+        print(f"Error getting overall college zone rate ({pitcher_throws}): {str(e)}")
+        return None
+
+def calculate_zone_rates(pitch_data, comparison_level='D1', pitcher_throws='Right'):
+    """Calculate zone rates for each pitch type and overall, with college comparisons"""
     try:
         # Strike zone boundaries (in feet, same as used in the plot)
         strike_zone = {
@@ -537,29 +644,59 @@ def calculate_zone_rates(pitch_data):
             if in_zone:
                 pitch_type_data[pitch_type]['in_zone'] += 1
         
-        # Calculate zone rate percentages for each pitch type
+        # Calculate zone rate percentages for each pitch type WITH college comparisons
         zone_rates = {}
         for pitch_type, data in pitch_type_data.items():
             if data['total'] > 0:
-                zone_rate = (data['in_zone'] / data['total']) * 100
+                player_zone_rate = (data['in_zone'] / data['total']) * 100
+                
+                # Get college zone rate for this pitch type
+                college_zone_data = get_college_zone_rates(pitch_type, comparison_level, pitcher_throws)
+                college_zone_rate = college_zone_data['avg_zone_rate'] if college_zone_data else None
+                
+                # Calculate comparison
+                zone_comparison = None
+                if college_zone_rate is not None:
+                    difference = player_zone_rate - college_zone_rate
+                    zone_comparison = {
+                        'difference': difference,
+                        'better': difference > 0  # Higher zone rate is generally better
+                    }
+                
                 zone_rates[pitch_type] = {
-                    'zone_rate': zone_rate,
+                    'zone_rate': player_zone_rate,
                     'in_zone': data['in_zone'],
-                    'total': data['total']
+                    'total': data['total'],
+                    'college_zone_rate': college_zone_rate,
+                    'zone_comparison': zone_comparison
                 }
         
         # Calculate overall zone rate
         overall_zone_rate = (total_in_zone / total_pitches * 100) if total_pitches > 0 else 0
         
+        # Get overall college zone rate
+        overall_college_zone_rate = get_overall_college_zone_rate(comparison_level, pitcher_throws)
+        
+        # Calculate overall comparison
+        overall_zone_comparison = None
+        if overall_college_zone_rate is not None:
+            overall_difference = overall_zone_rate - overall_college_zone_rate
+            overall_zone_comparison = {
+                'difference': overall_difference,
+                'better': overall_difference > 0
+            }
+        
         return {
             'pitch_type_zone_rates': zone_rates,
             'overall_zone_rate': overall_zone_rate,
+            'overall_college_zone_rate': overall_college_zone_rate,
+            'overall_zone_comparison': overall_zone_comparison,
             'total_pitches_with_location': total_pitches,
             'total_in_zone': total_in_zone
         }
         
     except Exception as e:
-        print(f"Error calculating zone rates: {str(e)}")
+        print(f"Error calculating zone rates with college comparison: {str(e)}")
         return None
 
 def generate_pitch_location_plot_svg(pitch_data, width=700, height=600):
@@ -1682,7 +1819,7 @@ def generate_pitcher_pdf(pitcher_name, pitch_data, date, comparison_level=None):
         pitch_location_plot_svg = generate_pitch_location_plot_svg(pitch_data)
         
         # Calculate zone rates
-        zone_rate_data = calculate_zone_rates(pitch_data)
+        zone_rate_data = calculate_zone_rates(pitch_data, comparison_level, pitcher_throws)
         
         # Debug plot generation
         print(f"Movement plot generated: {movement_plot_svg is not None}")

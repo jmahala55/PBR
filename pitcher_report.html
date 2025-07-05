@@ -935,138 +935,387 @@
     line-height: 1.5;
 }
 
-/* Zone Rate Styles */
-.pitch-location-info {
-    flex: 0 0 auto;
-    max-width: 30%;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
+/* Clean Zone Rate Table Styles */
+.zone-rate-clean-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    font-size: 12px;
+    margin: 20px 0;
 }
 
-.zone-rate-section {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    padding: 15px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.zone-rate-title {
-    font-size: 14px;
-    font-weight: 700;
-    color: #1e293b;
-    margin: 0 0 12px 0;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    text-align: center;
-    border-bottom: 2px solid #3498db;
-    padding-bottom: 6px;
-}
-
-.overall-zone-rate {
-    margin-bottom: 15px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid #e2e8f0;
-}
-
-.zone-rate-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-bottom: 8px;
-    padding: 6px;
-    border-radius: 6px;
-    background: white;
-    border: 1px solid #e2e8f0;
-}
-
-.zone-rate-item.overall {
+/* Table Headers */
+.zone-rate-clean-table th {
     background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
     color: white;
-    border: none;
-    padding: 10px;
-    margin-bottom: 0;
-}
-
-.zone-rate-label {
+    padding: 18px 15px;
+    text-align: center;
+    font-weight: 700;
     font-size: 11px;
-    font-weight: 600;
-    color: #64748b;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 2px;
+    letter-spacing: 1px;
+    border: none;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
 }
 
-.zone-rate-item.overall .zone-rate-label {
-    color: rgba(255, 255, 255, 0.8);
+.pitch-type-header {
+    text-align: left !important;
+    width: 25%;
+}
+
+.player-header {
+    width: 15%;
+}
+
+.college-header {
+    width: 15%;
+}
+
+.difference-header {
+    width: 15%;
+}
+
+.visual-header {
+    width: 30%;
+}
+
+/* Simplified Zone Rate Table - No Titles, No Animations */
+.zone-rate-page {
+    page-break-before: always;
+    padding: 20px;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+.zone-rate-page-container {
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    box-sizing: border-box;
+}
+
+.zone-rate-clean-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
     font-size: 12px;
+    margin: 0;
 }
 
-.zone-rate-value {
+/* Table Headers */
+.zone-rate-clean-table th {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    color: white;
+    padding: 18px 15px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border: none;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+.pitch-type-header {
+    text-align: left !important;
+    width: 25%;
+}
+
+.player-header {
+    width: 15%;
+}
+
+.college-header {
+    width: 15%;
+}
+
+.difference-header {
+    width: 15%;
+}
+
+.visual-header {
+    width: 30%;
+}
+
+/* Table Body */
+.zone-rate-clean-table td {
+    padding: 15px 12px;
+    text-align: center;
+    border-bottom: 1px solid #f1f5f9;
+    font-weight: 500;
+    vertical-align: middle;
+}
+
+.zone-rate-clean-table tr:nth-child(even) {
+    background: #f8fafc;
+}
+
+.zone-rate-clean-table tr:nth-child(odd) {
+    background: white;
+}
+
+/* Overall Row Styling */
+.overall-row {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%) !important;
+    color: white !important;
+}
+
+.overall-row td {
+    color: white !important;
+    font-weight: 600 !important;
+    border-bottom: 2px solid #4a5568 !important;
+    padding: 18px 12px !important;
+}
+
+/* Pitch Type Names */
+.pitch-name-overall,
+.pitch-name {
+    text-align: left !important;
+}
+
+.pitch-label-overall {
     font-size: 16px;
     font-weight: 700;
-    color: #1e293b;
-    margin-bottom: 2px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
 }
 
-.zone-rate-value.overall-rate {
-    font-size: 18px;
+.pitch-label {
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #1e293b;
+}
+
+.pitch-count-small {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 400;
+}
+
+/* Zone Percentages */
+.zone-percentage-large {
+    font-size: 20px;
+    font-weight: 700;
     color: white;
 }
 
-.zone-rate-count {
-    font-size: 9px;
-    color: #64748b;
-    font-weight: 500;
+.zone-percentage {
+    font-size: 16px;
+    font-weight: 700;
+    color: #059669;
+    background: rgba(5, 150, 105, 0.1);
+    padding: 6px 10px;
+    border-radius: 8px;
+    display: inline-block;
 }
 
-.zone-rate-item.overall .zone-rate-count {
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 10px;
+.college-percentage {
+    font-size: 14px;
+    font-weight: 600;
+    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.1);
+    padding: 6px 10px;
+    border-radius: 8px;
+    display: inline-block;
 }
 
-.pitch-type-zone-rates {
+/* Difference Values */
+.difference-value {
+    font-size: 14px;
+    font-weight: 700;
+    padding: 6px 10px;
+    border-radius: 8px;
+    display: inline-block;
+}
+
+.difference-value.positive {
+    color: #059669;
+    background: rgba(5, 150, 105, 0.1);
+}
+
+.difference-value.negative {
+    color: #dc2626;
+    background: rgba(220, 38, 38, 0.1);
+}
+
+/* Visual Comparison - NO ANIMATIONS */
+.comparison-visual {
     display: flex;
-    flex-direction: column;
-    gap: 6px;
+    align-items: center;
+    gap: 15px;
+    justify-content: center;
+    padding: 5px 10px;
 }
 
-.zone-rate-item.pitch-type {
-    padding: 8px;
+.bar-background {
+    position: relative;
+    width: 160px;
+    height: 24px;
+    background: #e5e7eb;
+    border-radius: 12px;
+    border: 2px solid #d1d5db;
+    overflow: hidden;
+    box-sizing: border-box;
 }
 
-/* Print optimizations for zone rates */
+.player-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+    border-radius: 10px;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* Ensure 0% shows as empty, 100% fills completely */
+.player-bar[style*="width: 0%"] {
+    width: 0 !important;
+}
+
+.player-bar[style*="width: 100%"] {
+    width: 100% !important;
+}
+
+.college-line {
+    position: absolute;
+    top: -3px;
+    width: 4px;
+    height: 30px;
+    background: #f59e0b;
+    border-radius: 2px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    z-index: 10;
+    transform: translateX(-2px);
+}
+
+.college-line::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: -3px;
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-bottom: 6px solid #f59e0b;
+}
+
+/* TRADITIONAL STRAIGHT UP/DOWN ARROWS */
+.comparison-arrow {
+    font-size: 20px;
+    font-weight: bold;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.25);
+    flex-shrink: 0;
+}
+
+.arrow-up {
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+    color: white;
+}
+
+.arrow-down {
+    background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+    color: white;
+}
+
+/* Overall row visual adjustments */
+.overall-row .bar-background {
+    background: rgba(255, 255, 255, 0.15);
+    border: 2px solid rgba(255, 255, 255, 0.25);
+}
+
+.overall-row .player-bar {
+    background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+}
+
+.overall-row .college-line {
+    background: #fbbf24;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+
+.overall-row .college-line::before {
+    border-bottom-color: #fbbf24;
+}
+
+/* Print Optimizations */
 @media print {
-    .zone-rate-section {
-        padding: 10px;
-        margin-top: 10px;
+    .zone-rate-page {
+        page-break-before: always;
+        padding: 15px;
     }
     
-    .zone-rate-title {
-        font-size: 12px;
-        margin-bottom: 8px;
+    .zone-rate-page-container {
+        padding: 15px;
     }
     
-    .zone-rate-item {
-        margin-bottom: 6px;
-        padding: 4px;
+    .zone-rate-clean-table {
+        font-size: 10px;
     }
     
-    .zone-rate-value {
-        font-size: 14px;
+    .zone-rate-clean-table th {
+        padding: 12px 10px;
+        font-size: 9px;
     }
     
-    .zone-rate-value.overall-rate {
+    .zone-rate-clean-table td {
+        padding: 10px 8px;
+    }
+    
+    .overall-row td {
+        padding: 12px 8px !important;
+    }
+    
+    .zone-percentage-large {
         font-size: 16px;
     }
     
-    .pitch-location-info {
-        max-width: 35%;
+    .zone-percentage {
+        font-size: 14px;
+        padding: 4px 8px;
     }
     
-    .pitch-location-plot {
-        max-width: 60%;
+    .college-percentage {
+        font-size: 12px;
+        padding: 4px 8px;
+    }
+    
+    .difference-value {
+        font-size: 12px;
+        padding: 4px 8px;
+    }
+    
+    .bar-background {
+        width: 130px;
+        height: 20px;
+    }
+    
+    .comparison-arrow {
+        font-size: 18px;
+        width: 28px;
+        height: 28px;
+    }
+    
+    .comparison-visual {
+        gap: 10px;
+        padding: 3px 8px;
     }
 }
 
@@ -1265,6 +1514,117 @@
             The inner rectangle represents the strike zone, while the outer dashed rectangle shows the shadow zone. 
             Different shapes indicate the result of each pitch (ball, called strike, swinging strike, foul, or in play).
         </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- SIMPLIFIED ZONE RATE TABLE - NO TITLES -->
+{% if zone_rate_data %}
+<div class="zone-rate-page">
+    <div class="zone-rate-page-container">
+        <table class="zone-rate-clean-table">
+            <thead>
+                <tr>
+                    <th class="pitch-type-header">Pitch Type</th>
+                    <th class="player-header">Player Zone %</th>
+                    {% if summary_stats.comparison_level %}
+                    <th class="college-header">{{ summary_stats.comparison_level }}{% if summary_stats.pitcher_throws %} {% if summary_stats.pitcher_throws == 'Right' %}RHP{% else %}LHP{% endif %}{% endif %} Avg</th>
+                    <th class="difference-header">Difference</th>
+                    {% endif %}
+                    <th class="visual-header">Comparison</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Overall row at the top -->
+                <tr class="overall-row">
+                    <td class="pitch-name-overall">
+                        <div class="pitch-label-overall">OVERALL</div>
+                        <div class="pitch-count-small">{{ zone_rate_data.total_in_zone }} of {{ zone_rate_data.total_pitches_with_location }} pitches</div>
+                    </td>
+                    <td class="player-zone-overall">
+                        <div class="zone-percentage-large">{{ "%.1f"|format(zone_rate_data.overall_zone_rate) }}%</div>
+                    </td>
+                    {% if summary_stats.comparison_level %}
+                    <td class="college-zone-overall">
+                        {% if zone_rate_data.overall_college_zone_rate %}
+                        <div class="college-percentage">{{ "%.1f"|format(zone_rate_data.overall_college_zone_rate) }}%</div>
+                        {% else %}
+                        <div class="college-percentage">N/A</div>
+                        {% endif %}
+                    </td>
+                    <td class="difference-overall">
+                        {% if zone_rate_data.overall_zone_comparison %}
+                        <div class="difference-value {% if zone_rate_data.overall_zone_comparison.better %}positive{% else %}negative{% endif %}">
+                            {{ "%.1f"|format(zone_rate_data.overall_zone_comparison.difference) }}%
+                        </div>
+                        {% else %}
+                        <div class="difference-value">N/A</div>
+                        {% endif %}
+                    </td>
+                    {% endif %}
+                    <td class="visual-overall">
+                        <div class="comparison-visual">
+                            <div class="bar-background">
+                                <div class="player-bar" style="width: {{ zone_rate_data.overall_zone_rate }}%"></div>
+                                {% if zone_rate_data.overall_college_zone_rate %}
+                                <div class="college-line" style="left: {{ zone_rate_data.overall_college_zone_rate }}%"></div>
+                                {% endif %}
+                            </div>
+                            {% if zone_rate_data.overall_zone_comparison %}
+                            <div class="comparison-arrow {% if zone_rate_data.overall_zone_comparison.better %}arrow-up{% else %}arrow-down{% endif %}">
+                                {% if zone_rate_data.overall_zone_comparison.better %}↑{% else %}↓{% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                
+                <!-- Individual pitch types -->
+                {% for pitch_type, zone_data in zone_rate_data.pitch_type_zone_rates.items() %}
+                <tr class="pitch-row">
+                    <td class="pitch-name">
+                        <div class="pitch-label">{{ pitch_type }}</div>
+                    </td>
+                    <td class="player-zone">
+                        <div class="zone-percentage">{{ "%.1f"|format(zone_data.zone_rate) }}%</div>
+                    </td>
+                    {% if summary_stats.comparison_level %}
+                    <td class="college-zone">
+                        {% if zone_data.college_zone_rate %}
+                        <div class="college-percentage">{{ "%.1f"|format(zone_data.college_zone_rate) }}%</div>
+                        {% else %}
+                        <div class="college-percentage">N/A</div>
+                        {% endif %}
+                    </td>
+                    <td class="difference">
+                        {% if zone_data.zone_comparison %}
+                        <div class="difference-value {% if zone_data.zone_comparison.better %}positive{% else %}negative{% endif %}">
+                            {{ "%.1f"|format(zone_data.zone_comparison.difference) }}%
+                        </div>
+                        {% else %}
+                        <div class="difference-value">N/A</div>
+                        {% endif %}
+                    </td>
+                    {% endif %}
+                    <td class="visual">
+                        <div class="comparison-visual">
+                            <div class="bar-background">
+                                <div class="player-bar" style="width: {{ zone_data.zone_rate }}%"></div>
+                                {% if zone_data.college_zone_rate %}
+                                <div class="college-line" style="left: {{ zone_data.college_zone_rate }}%"></div>
+                                {% endif %}
+                            </div>
+                            {% if zone_data.zone_comparison %}
+                            <div class="comparison-arrow {% if zone_data.zone_comparison.better %}arrow-up{% else %}arrow-down{% endif %}">
+                                {% if zone_data.zone_comparison.better %}↑{% else %}↓{% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 {% endif %}
