@@ -848,6 +848,159 @@
             font-size: 7px;
             opacity: 0.9;
         }
+
+/* Pitch Location with Image Styles */
+.pitch-location-container {
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 10px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    width: calc(100% - 20px);
+    max-width: none;
+}
+
+.pitch-location-content {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.pitch-location-plot {
+    flex: 1;
+    max-width: 65%;
+}
+
+.pitch-location-plot svg {
+    width: 100%;
+    height: auto;
+}
+
+.pitch-location-right {
+    flex: 0 0 auto;
+    max-width: 30%;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.pitch-location-image {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.miss-image {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+/* Zone Statistics Table */
+.zone-stats-table {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.zone-table-header {
+    margin: 0 0 10px 0;
+    color: #1e293b;
+    font-size: 14px;
+    font-weight: 700;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.zone-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    background: white;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.zone-table th {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    color: white;
+    padding: 8px 6px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.zone-table td {
+    padding: 6px 4px;
+    text-align: center;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 10px;
+}
+
+.zone-table tr:nth-child(even) {
+    background: #f8fafc;
+}
+
+.zone-table tr:nth-child(odd) {
+    background: white;
+}
+
+.zone-table .overall-row {
+    background: #e8f4fd !important;
+    border-top: 2px solid #3498db;
+    border-bottom: 2px solid #3498db;
+}
+
+.zone-table .overall-row td {
+    font-weight: 600;
+}
+
+.zone-table .positive {
+    color: #059669;
+    font-weight: 700;
+}
+
+.zone-table .negative {
+    color: #dc2626;
+    font-weight: 700;
+}
+
+/* Responsive adjustments */
+@media print {
+    .pitch-location-content {
+        gap: 15px;
+    }
+    
+    .pitch-location-plot {
+        max-width: 60%;
+    }
+    
+    .pitch-location-right {
+        max-width: 35%;
+    }
+    
+    .zone-table {
+        font-size: 9px;
+    }
+    
+    .zone-table th {
+        font-size: 8px;
+        padding: 6px 4px;
+    }
+    
+    .zone-table td {
+        font-size: 9px;
+        padding: 4px 3px;
+    }
+}
 </style>
 </head>
 <body>
@@ -1004,23 +1157,28 @@
     {% endif %}
 
         <!-- NEW PITCH LOCATION PLOT PAGE -->
-    {% if pitch_location_svg %}
-    <div class="movement-plot-page">
-        <div class="movement-plot-header">
-            Pitch Location Analysis
-        </div>
-        <div class="movement-plot-container">
-            <div class="movement-plot-svg">
+{% if pitch_location_svg %}
+<div class="movement-plot-page">
+    <div class="movement-plot-header">
+        Pitch Location Analysis
+    </div>
+    <div class="pitch-location-container">
+        <div class="pitch-location-content">
+            <div class="pitch-location-plot">
                 {{ pitch_location_svg|safe }}
             </div>
-            <div class="movement-plot-description">
-                <strong>Understanding Pitch Location:</strong> This chart shows where each pitch crossed the plate from the batter's perspective. 
-                The inner rectangle represents the strike zone, while the outer dashed rectangle shows the shadow zone. 
-                Different shapes indicate the result of each pitch (ball, called strike, swinging strike, foul, or in play).
+            <div class="pitch-location-image">
+                <img src="static/miss.png" alt="Miss Analysis" class="miss-image">
             </div>
         </div>
+        <div class="movement-plot-description">
+            <strong>Understanding Pitch Location:</strong> This chart shows where each pitch crossed the plate from the batter's perspective. 
+            The inner rectangle represents the strike zone, while the outer dashed rectangle shows the shadow zone. 
+            Different shapes indicate the result of each pitch (ball, called strike, swinging strike, foul, or in play).
+        </div>
     </div>
-    {% endif %}
+</div>
+{% endif %}
     
     <div class="details-section first-page">
         <h2 class="section-header{% if pitch_data|length > 14 %} compact{% endif %}">Detailed Pitch Analysis</h2>

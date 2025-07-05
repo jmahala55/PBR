@@ -410,11 +410,13 @@ def get_pitcher_summary():
         
         # Generate movement plot
         movement_plot_svg = generate_movement_plot_svg(pitch_data)
+        pitch_location_svg = generate_pitch_location_plot_svg(pitch_data)
         
         return jsonify({
             'pitch_data': pitch_data,
             'multi_level_stats': multi_level_stats,
             'movement_plot_svg': movement_plot_svg,
+            'pitch_location_svg': pitch_location_svg,
             'comparison_level': comparison_level,
             'pitcher_throws': pitcher_throws
         })
@@ -476,8 +478,8 @@ def get_matched_prospects():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-def generate_pitch_location_plot_svg(pitch_data, width=800, height=600):
-    """Generate SVG for pitch location plot (batter's perspective)"""
+def generate_pitch_location_plot_svg(pitch_data, width=700, height=600):
+
     try:
         # Group pitches by type
         pitch_types = {}
@@ -504,10 +506,13 @@ def generate_pitch_location_plot_svg(pitch_data, width=800, height=600):
             'Curve': '#1D4ED8', 'Cut Fastball': '#BE185D', 'Split-Finger': '#0891B2'
         }
         
-        # Set up plot dimensions
-        margin = 60
-        plot_width = width - 2 * margin
-        plot_height = height - 2 * margin
+        # Set up plot dimensions - wider with space for 3D effect
+        margin_left = 60
+        margin_right = 150  # Space for legend and 3D effect
+        margin_top = 60
+        margin_bottom = 60
+        plot_width = width - margin_left - margin_right
+        plot_height = height - margin_top - margin_bottom
         
         # Define coordinate ranges (feet)
         x_min, x_max = -4, 4
@@ -515,10 +520,10 @@ def generate_pitch_location_plot_svg(pitch_data, width=800, height=600):
         
         # Scale functions
         def scale_x(x):
-            return margin + (x - x_min) / (x_max - x_min) * plot_width
+            return margin_left + (x - x_min) / (x_max - x_min) * plot_width
         
         def scale_y(y):
-            return margin + plot_height - (y - y_min) / (y_max - y_min) * plot_height
+            return margin_top + plot_height - (y - y_min) / (y_max - y_min) * plot_height
         
         # Strike zone dimensions (feet)
         strike_zone = {
@@ -536,7 +541,7 @@ def generate_pitch_location_plot_svg(pitch_data, width=800, height=600):
             'ymax': strike_zone['ymax'] + 1.47/12
         }
         
-        # Home plate coordinates - create 3D effect with multiple layers
+        # Home plate coordinates - create 3D effect with multiple layers (from old Python code)
         # Base layer (bottom)
         home_plate_base = [
             (-0.7, -0.1),
@@ -548,7 +553,7 @@ def generate_pitch_location_plot_svg(pitch_data, width=800, height=600):
         ]
         
         # Top layer (slightly offset for 3D effect)
-        home_plate_top = [
+        home_plate_lifted = [
             (-0.7, 0.0),
             (0.7, 0.0),
             (0.7, 0.3),
@@ -564,7 +569,9 @@ def generate_pitch_location_plot_svg(pitch_data, width=800, height=600):
             '<style>',
             '.strike-zone { stroke: black; stroke-width: 2; fill: none; }',
             '.shadow-zone { stroke: black; stroke-width: 1; fill: none; stroke-dasharray: 3,3; }',
-            '.home-plate { stroke: black; stroke-width: 2; fill: white; }',
+            '.home-plate-base { stroke: black; stroke-width: 1; fill: #f0f0f0; }',
+            '.home-plate-top { stroke: black; stroke-width: 2; fill: white; }',
+            '.plate-connector { stroke: black; stroke-width: 1; }',
             '.batter-box { stroke: black; stroke-width: 3; fill: none; }',
             '.axis-text { font-family: Arial, sans-serif; font-size: 10px; fill: black; }',
             '.plot-title { font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; fill: #1a1a1a; text-anchor: start; }',
@@ -579,8 +586,8 @@ def generate_pitch_location_plot_svg(pitch_data, width=800, height=600):
         
         # Title and subtitle
         svg_parts.extend([
-            f'<text x="{margin}" y="25" class="plot-title">Pitch Location</text>',
-            f'<text x="{margin}" y="40" class="plot-subtitle">Batter\'s Perspective</text>'
+            f'<text x="{margin_left}" y="25" class="plot-title">Pitch Location</text>',
+            f'<text x="{margin_left}" y="40" class="plot-subtitle">Batter\'s Perspective</text>'
         ])
         
         # Draw larger strike zone (shadow zone)
@@ -612,41 +619,50 @@ def generate_pitch_location_plot_svg(pitch_data, width=800, height=600):
             x_pos = scale_x(strike_zone['xmin'] + i * third_width)
             svg_parts.append(f'<line x1="{x_pos}" y1="{zone_top}" x2="{x_pos}" y2="{zone_bottom}" stroke="black" stroke-width="1"/>')
         
-        # Draw 3D home plate
-        # Base layer
+        # Draw home plate with 3D effect (like R code)
+        # Draw base plate (bottom layer)
         base_points = []
         for x, y in home_plate_base:
             base_points.append(f"{scale_x(x)},{scale_y(y)}")
-        svg_parts.append(f'<polygon points="{" ".join(base_points)}" fill="white" stroke="black" stroke-width="1"/>')
+        svg_parts.append(f'<polygon points="{" ".join(base_points)}" class="home-plate-base"/>')
         
-        # Top layer
-        top_points = []
-        for x, y in home_plate_top:
-            top_points.append(f"{scale_x(x)},{scale_y(y)}")
-        svg_parts.append(f'<polygon points="{" ".join(top_points)}" fill="white" stroke="black" stroke-width="2"/>')
+        # Draw lifted plate (top layer)
+        lifted_points = []
+        for x, y in home_plate_lifted:
+            lifted_points.append(f"{scale_x(x)},{scale_y(y)}")
+        svg_parts.append(f'<polygon points="{" ".join(lifted_points)}" class="home-plate-top"/>')
         
-        # Connect the layers to create 3D effect
+        # Draw connecting lines for 3D effect (like the R code segments)
         for i in range(len(home_plate_base)):
             x1, y1 = home_plate_base[i]
-            x2, y2 = home_plate_top[i]
-            svg_parts.append(f'<line x1="{scale_x(x1)}" y1="{scale_y(y1)}" x2="{scale_x(x2)}" y2="{scale_y(y2)}" stroke="black" stroke-width="1"/>')
+            x2, y2 = home_plate_lifted[i]
+            svg_parts.append(f'<line x1="{scale_x(x1)}" y1="{scale_y(y1)}" x2="{scale_x(x2)}" y2="{scale_y(y2)}" class="plate-connector"/>')
         
-        # Draw 3D batter's boxes
-        # Right batter's box (3D perspective)
-        # Front face
+        # Draw batter's boxes with 3D effect (like R code)
+        # Right batter's box
+        right_box_back = 1.1
+        right_box_front = 0.85
+        right_box_outside = 2.5
+        box_top = 0.3
+        box_bottom = -1.0
+        
+        # Right box 3D lines (matching R code segments exactly)
         svg_parts.extend([
-            f'<line x1="{scale_x(1.1)}" y1="{scale_y(-1)}" x2="{scale_x(0.92)}" y2="{scale_y(0.3)}" stroke="black" stroke-width="3"/>',
-            f'<line x1="{scale_x(0.85)}" y1="{scale_y(0.3)}" x2="{scale_x(2.5)}" y2="{scale_y(0.3)}" stroke="black" stroke-width="3"/>',
+            # Right box angled front line (matches R: x = 1.1, y = -1, xend = .92, yend = 0.3)
+            f'<line x1="{scale_x(1.1)}" y1="{scale_y(-1)}" x2="{scale_x(0.92)}" y2="{scale_y(0.3)}" stroke="black" stroke-width="5"/>',
+            # Right box horizontal top line (matches R: x = .85, y = 0.3, xend = 2.5, yend = 0.3)
+            f'<line x1="{scale_x(0.85)}" y1="{scale_y(0.3)}" x2="{scale_x(2.5)}" y2="{scale_y(0.3)}" stroke="black" stroke-width="5"/>',
         ])
         
-        # Left batter's box (3D perspective)  
-        # Front face
+        # Left batter's box (mirror of right)
         svg_parts.extend([
-            f'<line x1="{scale_x(-1.1)}" y1="{scale_y(-1)}" x2="{scale_x(-0.92)}" y2="{scale_y(0.3)}" stroke="black" stroke-width="3"/>',
-            f'<line x1="{scale_x(-0.85)}" y1="{scale_y(0.3)}" x2="{scale_x(-2.5)}" y2="{scale_y(0.3)}" stroke="black" stroke-width="3"/>',
+            # Left box angled front line (matches R: x = -1.1, y = -1, xend = -0.92, yend = 0.3)
+            f'<line x1="{scale_x(-1.1)}" y1="{scale_y(-1)}" x2="{scale_x(-0.92)}" y2="{scale_y(0.3)}" stroke="black" stroke-width="5"/>',
+            # Left box horizontal top line (matches R: x = -0.85, y = 0.3, xend = -2.5, yend = 0.3)
+            f'<line x1="{scale_x(-0.85)}" y1="{scale_y(0.3)}" x2="{scale_x(-2.5)}" y2="{scale_y(0.3)}" stroke="black" stroke-width="5"/>',
         ])
         
-        # Plot pitch locations (simple circles only)
+        # Plot pitch locations
         for pitch_type, pitches in pitch_types.items():
             color = colors.get(pitch_type, '#666666')
             
@@ -657,9 +673,9 @@ def generate_pitch_location_plot_svg(pitch_data, width=800, height=600):
                 # Simple circles for all pitches
                 svg_parts.append(f'<circle cx="{x_pos}" cy="{y_pos}" r="4" fill="{color}" fill-opacity="0.7" stroke="white" stroke-width="1"/>')
         
-        # Legend (simplified - pitch types only)
-        legend_x = margin + plot_width - 120
-        legend_y = margin + 50
+        # Legend (positioned more to the left)
+        legend_x = margin_left + plot_width - 100  # Moved 80px to the left
+        legend_y = margin_top + 50
         
         # Pitch type legend
         svg_parts.append(f'<text x="{legend_x}" y="{legend_y}" class="legend-text" style="font-weight: bold;">Pitch Types:</text>')
@@ -672,6 +688,28 @@ def generate_pitch_location_plot_svg(pitch_data, width=800, height=600):
                 f'<text x="{legend_x + 15}" y="{current_y + 3}" class="legend-text">{pitch_type}</text>'
             ])
             current_y += 15
+        
+        # Add axis labels
+        # X-axis label
+        x_center = margin_left + plot_width/2
+        svg_parts.append(f'<text x="{x_center}" y="{height - 20}" class="axis-text" text-anchor="middle" style="font-weight: bold;">Plate Location - Side (ft)</text>')
+        
+        # Y-axis label
+        y_center = margin_top + plot_height/2
+        svg_parts.append(f'<text x="20" y="{y_center}" class="axis-text" text-anchor="middle" style="font-weight: bold;" transform="rotate(-90, 20, {y_center})">Plate Location - Height (ft)</text>')
+        
+        # Add tick marks and labels
+        # X-axis ticks
+        for x in [-3, -2, -1, 0, 1, 2, 3]:
+            x_pos = scale_x(x)
+            svg_parts.append(f'<line x1="{x_pos}" y1="{margin_top + plot_height}" x2="{x_pos}" y2="{margin_top + plot_height + 5}" stroke="black" stroke-width="1"/>')
+            svg_parts.append(f'<text x="{x_pos}" y="{margin_top + plot_height + 18}" class="axis-text" text-anchor="middle">{x}</text>')
+        
+        # Y-axis ticks
+        for y in [0, 1, 2, 3, 4, 5]:
+            y_pos = scale_y(y)
+            svg_parts.append(f'<line x1="{margin_left - 5}" y1="{y_pos}" x2="{margin_left}" y2="{y_pos}" stroke="black" stroke-width="1"/>')
+            svg_parts.append(f'<text x="{margin_left - 10}" y="{y_pos + 3}" class="axis-text" text-anchor="end">{y}</text>')
         
         # Close SVG
         svg_parts.append('</svg>')
