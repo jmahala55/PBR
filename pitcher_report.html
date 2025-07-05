@@ -33,7 +33,7 @@
             display: grid;
             grid-template-columns: 1fr 2fr 1fr;
             align-items: center;
-            margin: 20px 0;
+            margin: 0px 0;
             padding: 20px 30px;
             background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
             color: white;
@@ -100,6 +100,62 @@
             box-shadow: 0 2px 6px rgba(0,0,0,0.3);
             letter-spacing: 1px;
             text-transform: uppercase;
+        }
+        
+        /* Movement Plot Page Styles */
+        .movement-plot-page {
+            page-break-before: always;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 0;
+            margin: 0;
+        }
+        
+
+
+        .movement-plot-header {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 16px;
+            border-radius: 8px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    width: 100%;
+    max-width: none;
+    padding: 18px 25px;
+}
+        
+        .movement-plot-container {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 10px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            width: calc(100% - 20px);
+            max-width: none;
+        }
+        
+        .movement-plot-svg {
+            width: 100%;
+            height: auto;
+            max-width: none;
+        }
+        
+        .movement-plot-description {
+            margin-top: 15px;
+            padding: 12px;
+            background: #f8fafc;
+            border-left: 4px solid #3498db;
+            border-radius: 0 6px 6px 0;
+            font-size: 11px;
+            color: #2c3e50;
+            line-height: 1.5;
         }
         
         /* Comparison Legend - Dynamic sizing */
@@ -588,6 +644,12 @@
                 page-break-inside: avoid;
             }
             
+            /* Movement plot page */
+            .movement-plot-page {
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+            
             /* Each details section (pitch type) should be on its own page */
             .details-section {
                 break-inside: avoid;
@@ -928,6 +990,26 @@
             </table>
         </div>
     </div>
+
+    <!-- NEW MOVEMENT PLOT PAGE -->
+    {% if movement_plot_svg %}
+    <div class="movement-plot-page">
+        <div class="movement-plot-header">
+            Pitch Movement Analysis
+        </div>
+        <div class="movement-plot-container">
+            <div class="movement-plot-svg">
+                {{ movement_plot_svg|safe }}
+            </div>
+            <div class="movement-plot-description">
+                <strong>Understanding Pitch Movement:</strong> This chart shows the break patterns for each pitch type. 
+                Individual pitches are shown as smaller dots, with the larger dot representing the average for each pitch type. 
+                Horizontal break measures side-to-side movement (positive = arm-side break for RHP, glove-side for LHP), 
+                while induced vertical break measures rise or drop relative to gravity.
+            </div>
+        </div>
+    </div>
+    {% endif %}
     
     <div class="details-section first-page">
         <h2 class="section-header{% if pitch_data|length > 14 %} compact{% endif %}">Detailed Pitch Analysis</h2>

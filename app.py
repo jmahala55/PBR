@@ -359,6 +359,303 @@ def get_stats():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+def generate_movement_plot_svg(pitch_data, width=1000, height=500):
+    """Generate SVG for both movement plot (left) and release plot (right)"""
+    try:
+        # Group pitches by type
+        pitch_types = {}
+        for pitch in pitch_data:
+            pitch_type = pitch.get('TaggedPitchType')
+            if pitch_type and pitch.get('HorzBreak') is not None and pitch.get('InducedVertBreak') is not None:
+                if pitch_type not in pitch_types:
+                    pitch_types[pitch_type] = []
+                pitch_types[pitch_type].append({
+                    'hb': float(pitch.get('HorzBreak', 0)),
+                    'ivb': float(pitch.get('InducedVertBreak', 0)),
+                    'rel_side': float(pitch.get('RelSide', 0)) if pitch.get('RelSide') is not None else None,
+                    'rel_height': float(pitch.get('RelHeight', 0)) if pitch.get('RelHeight') is not None else None
+                })
+        
+        if not pitch_types:
+            return None
+        
+        # Define colors for pitch types
+        colors = {
+            'ChangeUp': '#059669', 'Curveball': '#1D4ED8', 'Cutter': '#BE185D',
+            'Fastball': '#DC2626', 'Knuckleball': '#9333EA', 'Sinker': '#EA580C',
+            'Slider': '#7C3AED', 'Splitter': '#0891B2', 'Sweeper': '#F59E0B',
+            'Four-Seam': '#DC2626', '4-Seam': '#DC2626', 'Two-Seam': '#EA580C',
+            'TwoSeam': '#EA580C', 'Changeup': '#059669', 'Change-up': '#059669',
+            'Curve': '#1D4ED8', 'Cut Fastball': '#BE185D', 'Split-Finger': '#0891B2'
+        }
+        
+        # Function to calculate 95% confidence ellipse (only for movement plot)
+        def calculate_confidence_ellipse(x_values, y_values, confidence=0.95):
+            if len(x_values) < 3:
+                return []
+            
+            import math
+            
+            x_mean = sum(x_values) / len(x_values)
+            y_mean = sum(y_values) / len(y_values)
+            
+            x_diff = [x - x_mean for x in x_values]
+            y_diff = [y - y_mean for y in y_values]
+            n = len(x_values)
+            
+            cov_xx = sum(x * x for x in x_diff) / (n - 1)
+            cov_xy = sum(x * y for x, y in zip(x_diff, y_diff)) / (n - 1)
+            cov_yy = sum(y * y for y in y_diff) / (n - 1)
+            
+            trace = cov_xx + cov_yy
+            det = cov_xx * cov_yy - cov_xy * cov_xy
+            
+            if det <= 0:
+                return []
+            
+            lambda1 = (trace + math.sqrt(trace * trace - 4 * det)) / 2
+            lambda2 = (trace - math.sqrt(trace * trace - 4 * det)) / 2
+            
+            if lambda1 <= 0 or lambda2 <= 0:
+                return []
+            
+            scale = math.sqrt(5.991)  # 95% confidence for 2D
+            a = scale * math.sqrt(lambda1)
+            b = scale * math.sqrt(lambda2)
+            
+            if abs(cov_xy) < 1e-10:
+                theta = 0 if cov_xx >= cov_yy else math.pi / 2
+            else:
+                theta = math.atan2(2 * cov_xy, cov_xx - cov_yy) / 2
+            
+            points = []
+            for t in [i * 0.1 for i in range(int(2 * math.pi / 0.1) + 1)]:
+                x = a * math.cos(t) * math.cos(theta) - b * math.sin(t) * math.sin(theta) + x_mean
+                y = a * math.cos(t) * math.sin(theta) + b * math.sin(t) * math.cos(theta) + y_mean
+                points.append((x, y))
+            
+            return points
+        
+        # Set up plot dimensions - two side-by-side plots
+        margin_left = 60  # More space for left axis labels
+        margin_right = 40  # Less space on right
+        margin_top = 40
+        margin_bottom = 40
+        center_gap = 40  # Gap between plots
+        
+        plot_width = (width - margin_left - margin_right - center_gap) // 2
+        plot_height = height - margin_top - margin_bottom
+        
+        # Movement plot (left)
+        mov_x_start = margin_left
+        mov_y_start = margin_top
+        
+        # Release plot (right)
+        rel_x_start = margin_left + plot_width + center_gap
+        rel_y_start = margin_top
+        
+        # Scale functions for movement plot
+        mov_x_min, mov_x_max = -30, 30
+        mov_y_min, mov_y_max = -30, 30
+        
+        def scale_mov_x(x):
+            return mov_x_start + (x - mov_x_min) / (mov_x_max - mov_x_min) * plot_width
+        
+        def scale_mov_y(y):
+            return mov_y_start + plot_height - (y - mov_y_min) / (mov_y_max - mov_y_min) * plot_height
+        
+        # Scale functions for release plot
+        rel_x_min, rel_x_max = -5, 5
+        rel_y_min, rel_y_max = 0, 8
+        
+        def scale_rel_x(x):
+            return rel_x_start + (x - rel_x_min) / (rel_x_max - rel_x_min) * plot_width
+        
+        def scale_rel_y(y):
+            return rel_y_start + plot_height - (y - rel_y_min) / (rel_y_max - rel_y_min) * plot_height
+        
+        # Start SVG
+        svg_parts = [
+            f'<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg">',
+            '<defs>',
+            '<style>',
+            '.axis-line { stroke: #990000; stroke-width: 2; }',
+            '.grid-line { stroke: rgba(0,0,0,0.2); stroke-width: 1; }',
+            '.axis-text { font-family: Arial, sans-serif; font-size: 10px; fill: black; }',
+            '.axis-title { font-family: Arial, sans-serif; font-size: 12px; font-weight: bold; fill: black; }',
+            '.legend-text { font-family: Arial, sans-serif; font-size: 9px; fill: black; }',
+            '.plot-title { font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; fill: #1a1a1a; text-anchor: start; }',
+            '.plot-subtitle { font-family: Arial, sans-serif; font-size: 10px; fill: #666666; text-anchor: start; font-style: italic; }',
+            '.plot-border { stroke: black; stroke-width: 2; fill: none; }',
+            '.confidence-ellipse { fill: none; stroke-width: 1.5; stroke-opacity: 0.7; }',
+            '.home-plate { stroke: #990000; stroke-width: 2; fill: white; }',
+            '.release-text { font-family: Arial, sans-serif; font-size: 12px; font-weight: bold; fill: #990000; text-anchor: middle; }',
+            '</style>',
+            '</defs>',
+            
+            # White background
+            f'<rect width="{width}" height="{height}" fill="white"/>',
+        ]
+        
+        # === MOVEMENT PLOT (LEFT) ===
+        
+        # Movement plot titles (left-aligned)
+        svg_parts.append(f'<text x="{mov_x_start}" y="20" class="plot-title">Movement Profile</text>')
+        svg_parts.append(f'<text x="{mov_x_start}" y="32" class="plot-subtitle">Pitcher\'s Perspective</text>')
+        
+        # Movement plot grid
+        for x in range(-25, 31, 5):  # Every 5 units like before
+            x_pos = scale_mov_x(x)
+            line_class = 'axis-line' if x == 0 else 'grid-line'
+            svg_parts.append(f'<line x1="{x_pos}" y1="{mov_y_start}" x2="{x_pos}" y2="{mov_y_start + plot_height}" class="{line_class}"/>')
+            if x != 0:
+                svg_parts.append(f'<text x="{x_pos}" y="{mov_y_start + plot_height + 15}" class="axis-text" text-anchor="middle">{x}</text>')
+        
+        for y in range(-25, 31, 5):  # Every 5 units like before
+            y_pos = scale_mov_y(y)
+            line_class = 'axis-line' if y == 0 else 'grid-line'
+            svg_parts.append(f'<line x1="{mov_x_start}" y1="{y_pos}" x2="{mov_x_start + plot_width}" y2="{y_pos}" class="{line_class}"/>')
+            if y != 0:
+                svg_parts.append(f'<text x="{mov_x_start - 10}" y="{y_pos + 3}" class="axis-text" text-anchor="end">{y}</text>')
+        
+        # Movement plot border
+        svg_parts.append(f'<rect x="{mov_x_start}" y="{mov_y_start}" width="{plot_width}" height="{plot_height}" class="plot-border"/>')
+        
+        # Movement plot axis labels
+        svg_parts.extend([
+            f'<text x="{mov_x_start + plot_width/2}" y="{height - 10}" class="axis-title" text-anchor="middle">Horizontal Break (in)</text>',
+            f'<text x="20" y="{mov_y_start + plot_height/2}" class="axis-title" text-anchor="middle" transform="rotate(-90, 20, {mov_y_start + plot_height/2})">Induced Vertical Break (in)</text>'
+        ])
+        
+        # === RELEASE PLOT (RIGHT) ===
+        
+        # Release plot titles (left-aligned)
+        svg_parts.append(f'<text x="{rel_x_start}" y="20" class="plot-title">Release Point</text>')
+        svg_parts.append(f'<text x="{rel_x_start}" y="32" class="plot-subtitle">Pitcher\'s Perspective</text>')
+        
+        # Release plot grid
+        for x in range(-4, 5, 1):  # Every 1 foot like before
+            x_pos = scale_rel_x(x)
+            line_class = 'axis-line' if x == 0 else 'grid-line'
+            svg_parts.append(f'<line x1="{x_pos}" y1="{rel_y_start}" x2="{x_pos}" y2="{rel_y_start + plot_height}" class="{line_class}"/>')
+            if x != 0:
+                svg_parts.append(f'<text x="{x_pos}" y="{rel_y_start + plot_height + 15}" class="axis-text" text-anchor="middle">{x}</text>')
+        
+        for y in range(1, 8, 1):  # Every 1 foot like before
+            y_pos = scale_rel_y(y)
+            svg_parts.append(f'<line x1="{rel_x_start}" y1="{y_pos}" x2="{rel_x_start + plot_width}" y2="{y_pos}" class="grid-line"/>')
+            svg_parts.append(f'<text x="{rel_x_start - 10}" y="{y_pos + 3}" class="axis-text" text-anchor="end">{y}</text>')
+        
+        # Release plot border
+        svg_parts.append(f'<rect x="{rel_x_start}" y="{rel_y_start}" width="{plot_width}" height="{plot_height}" class="plot-border"/>')
+        
+        # Release plot axis labels
+        svg_parts.extend([
+            f'<text x="{rel_x_start + plot_width/2}" y="{height - 10}" class="axis-title" text-anchor="middle">Release Side (ft)</text>',
+            f'<text x="{width - 15}" y="{rel_y_start + plot_height/2}" class="axis-title" text-anchor="middle" transform="rotate(-90, {width - 15}, {rel_y_start + plot_height/2})">Release Height (ft)</text>'
+        ])
+        
+        # Add LHP/RHP labels to release plot
+        svg_parts.extend([
+            f'<text x="{scale_rel_x(-4)}" y="{scale_rel_y(7.5)}" class="release-text">LHP</text>',
+            f'<text x="{scale_rel_x(4)}" y="{scale_rel_y(7.5)}" class="release-text">RHP</text>'
+        ])
+        
+        # Add home plate to release plot (wider and shorter)
+        plate_left = scale_rel_x(-1.0)  # Extended from -0.7 to -1.0
+        plate_right = scale_rel_x(1.0)  # Extended from 0.7 to 1.0
+        plate_top = scale_rel_y(1.0)    # Moved up from 1.2 to 1.0 (shorter)
+        plate_bottom = scale_rel_y(0.7) # Moved up from 0.5 to 0.7 (shorter)
+        svg_parts.append(f'<rect x="{plate_left}" y="{plate_top}" width="{plate_right - plate_left}" height="{plate_bottom - plate_top}" class="home-plate"/>')
+        
+        # Determine pitcher handedness for average release point
+        pitcher_throws = 'Right'  # Default
+        for pitch_list in pitch_types.values():
+            for pitch in pitch_list:
+                # We'd need to get this from the original data, but for now use default
+                break
+            break
+        
+        # Add average release point (open circle)
+        avg_rel_side = -1.7 if pitcher_throws == 'Left' else 1.66
+        avg_rel_height = 5.7
+        avg_x = scale_rel_x(avg_rel_side)
+        avg_y = scale_rel_y(avg_rel_height)
+        svg_parts.append(f'<circle cx="{avg_x}" cy="{avg_y}" r="6" fill="white" stroke="black" stroke-width="2"/>')
+        
+        # Plot data for both charts
+        for pitch_type, pitches in pitch_types.items():
+            color = colors.get(pitch_type, '#666666')
+            
+            # Extract coordinates
+            hb_values = [p['hb'] for p in pitches]
+            ivb_values = [p['ivb'] for p in pitches]
+            rel_side_values = [p['rel_side'] for p in pitches if p['rel_side'] is not None]
+            rel_height_values = [p['rel_height'] for p in pitches if p['rel_height'] is not None]
+            
+            # === MOVEMENT PLOT DATA ===
+            
+            # Draw 95% confidence ellipse for movement
+            if len(pitches) >= 3:
+                ellipse_points = calculate_confidence_ellipse(hb_values, ivb_values)
+                if ellipse_points:
+                    path_data = []
+                    for i, (x, y) in enumerate(ellipse_points):
+                        x_pos = scale_mov_x(x)
+                        y_pos = scale_mov_y(y)
+                        if i == 0:
+                            path_data.append(f'M {x_pos} {y_pos}')
+                        else:
+                            path_data.append(f'L {x_pos} {y_pos}')
+                    path_data.append('Z')
+                    svg_parts.append(f'<path d="{" ".join(path_data)}" class="confidence-ellipse" stroke="{color}"/>')
+            
+            # Movement individual points
+            for pitch in pitches:
+                x_pos = scale_mov_x(pitch['hb'])
+                y_pos = scale_mov_y(pitch['ivb'])
+                svg_parts.append(f'<circle cx="{x_pos}" cy="{y_pos}" r="2.5" fill="{color}" fill-opacity="0.6" stroke="rgba(255,255,255,0.4)" stroke-width="0.5"/>')
+            
+            # Movement average point
+            if pitches:
+                avg_hb = sum(p['hb'] for p in pitches) / len(pitches)
+                avg_ivb = sum(p['ivb'] for p in pitches) / len(pitches)
+                avg_x = scale_mov_x(avg_hb)
+                avg_y = scale_mov_y(avg_ivb)
+                svg_parts.append(f'<circle cx="{avg_x}" cy="{avg_y}" r="5" fill="{color}" stroke="rgba(0,0,0,0.8)" stroke-width="2"/>')
+            
+            # === RELEASE PLOT DATA ===
+            
+            # Release individual points (only if we have release data)
+            if rel_side_values and rel_height_values:
+                for i, pitch in enumerate(pitches):
+                    if pitch['rel_side'] is not None and pitch['rel_height'] is not None:
+                        x_pos = scale_rel_x(pitch['rel_side'])
+                        y_pos = scale_rel_y(pitch['rel_height'])
+                        svg_parts.append(f'<circle cx="{x_pos}" cy="{y_pos}" r="2.5" fill="{color}" fill-opacity="0.6" stroke="rgba(255,255,255,0.4)" stroke-width="0.5"/>')
+        
+        # Legend (bottom right of movement plot)
+        legend_y_start = mov_y_start + plot_height - 20
+        legend_x = mov_x_start + plot_width - 120
+        current_legend_y = legend_y_start
+        
+        for pitch_type in pitch_types.keys():
+            color = colors.get(pitch_type, '#666666')
+            svg_parts.extend([
+                f'<circle cx="{legend_x}" cy="{current_legend_y}" r="3" fill="{color}"/>',
+                f'<text x="{legend_x + 10}" y="{current_legend_y + 3}" class="legend-text">{pitch_type}</text>'
+            ])
+            current_legend_y -= 15
+        
+        # Close SVG
+        svg_parts.append('</svg>')
+        
+        return '\n'.join(svg_parts)
+        
+    except Exception as e:
+        print(f"Error generating movement plot SVG: {str(e)}")
+        return None
+
 
 # Add this new function to get college max velocity averages
 def get_college_max_velocity_averages(pitch_type, comparison_level='D1', pitcher_throws='Right'):
@@ -436,22 +733,23 @@ def calculate_difference_from_average(pitcher_value, college_average, metric_nam
         'absolute_diff': abs(difference)
     }
 
+# Replace these functions in your app.py
+
 def is_ivb_better(difference, pitch_type):
     """Determine if IVB difference is better based on pitch type"""
     
     # Normalize pitch type names for comparison
     pitch_type_lower = pitch_type.lower()
     
-    # Define pitch categories where negative IVB is better
-    negative_ivb_pitches = ['curveball', 'curve', 'changeup', 'change-up', 'splitter', 'split-finger']
+    # Define pitch categories where negative IVB is better (breaking balls and offspeed)
+    negative_ivb_pitches = ['curveball', 'changeup', 'splitter', 'knuckleball']
     
-    is_negative_ivb_pitch = any(neg_pitch in pitch_type_lower for neg_pitch in negative_ivb_pitches)
-    
-    if is_negative_ivb_pitch:
+    # Check for exact matches first
+    if pitch_type_lower in negative_ivb_pitches:
         # For these pitches, more negative IVB is better
         return difference < 0
     else:
-        # For all other pitches (fastballs, sliders, cutters), more positive IVB is better
+        # For fastballs, sinkers, cutters, sliders, sweepers - more positive IVB is better
         return difference > 0
 
 def is_velocity_better(difference, pitch_type):
@@ -460,16 +758,15 @@ def is_velocity_better(difference, pitch_type):
     # Normalize pitch type names for comparison
     pitch_type_lower = pitch_type.lower()
     
-    # Define pitch categories where lower velocity is better
-    lower_velo_pitches = ['changeup', 'change-up', 'splitter', 'split-finger']
+    # Define pitch categories where lower velocity is better (offspeed pitches)
+    lower_velo_pitches = ['changeup', 'splitter', 'knuckleball']
     
-    is_lower_velo_pitch = any(low_pitch in pitch_type_lower for low_pitch in lower_velo_pitches)
-    
-    if is_lower_velo_pitch:
-        # For changeups and splitters, lower velocity is better (more separation from fastball)
+    # Check for exact matches
+    if pitch_type_lower in lower_velo_pitches:
+        # For changeups, splitters, and knuckleballs, lower velocity is better (more separation from fastball)
         return difference < 0
     else:
-        # For all other pitches, higher velocity is better
+        # For all other pitches (fastball, sinker, cutter, slider, curveball, sweeper), higher velocity is better
         return difference > 0
 
 def is_horizontal_break_better(difference, pitch_type, pitcher_throws):
@@ -478,28 +775,27 @@ def is_horizontal_break_better(difference, pitch_type, pitcher_throws):
     # Normalize pitch type names for comparison
     pitch_type_lower = pitch_type.lower()
     
-    # Define pitch categories
-    breaking_balls = ['curveball', 'curve', 'slider', 'cutter', 'cut fastball']
-    fastballs_and_offspeed = ['fastball', 'four-seam', '4-seam', 'sinker', 'two-seam', '2-seam', 
-                              'changeup', 'change-up', 'splitter', 'split-finger', 'knuckleball']
+    # Define pitch categories based on expected break patterns
+    breaking_balls = ['curveball', 'slider', 'cutter', 'sweeper']  # Should break away from arm side
+    fastballs_and_offspeed = ['fastball', 'sinker', 'changeup', 'splitter', 'knuckleball']  # Should have arm-side run
     
     # Determine pitch category
-    is_breaking_ball = any(bb in pitch_type_lower for bb in breaking_balls)
-    is_fastball_or_offspeed = any(fo in pitch_type_lower for fo in fastballs_and_offspeed)
+    is_breaking_ball = pitch_type_lower in breaking_balls
+    is_fastball_or_offspeed = pitch_type_lower in fastballs_and_offspeed
     
     if pitcher_throws == 'Right':
         if is_breaking_ball:
-            # RHP breaking balls should go negative (more negative is better)
+            # RHP breaking balls should go negative (more negative is better) - breaks toward 1B
             return difference < 0
         elif is_fastball_or_offspeed:
-            # RHP fastballs/offspeed should go positive (more positive is better)
+            # RHP fastballs/offspeed should go positive (more positive is better) - arm-side run toward 3B
             return difference > 0
     elif pitcher_throws == 'Left':
         if is_breaking_ball:
-            # LHP breaking balls should go positive (more positive is better)
+            # LHP breaking balls should go positive (more positive is better) - breaks toward 3B
             return difference > 0
         elif is_fastball_or_offspeed:
-            # LHP fastballs/offspeed should go negative (more negative is better)
+            # LHP fastballs/offspeed should go negative (more negative is better) - arm-side run toward 1B
             return difference < 0
     
     # Default case: if pitch type doesn't match known categories, assume more is better
@@ -527,8 +823,8 @@ def get_multi_level_comparisons(pitch_data, pitcher_throws='Right'):
         multi_level_breakdown = []
         levels = ['D1', 'D2', 'D3']
         
-        # Define priority order - Fastball/Sinker first, then alphabetical
-        priority_types = ['Fastball', 'Sinker', 'Four-Seam', '4-Seam', 'TwoSeam', 'Two-Seam']
+ # Define priority order - Fastball first, then by general usage/importance
+        priority_types = ['Fastball', 'Sinker', 'Cutter', 'Slider', 'Curveball', 'ChangeUp', 'Sweeper', 'Splitter', 'Knuckleball']
         
         # Sort pitch types with priority
         sorted_pitch_types = []
@@ -689,7 +985,7 @@ def get_multi_level_comparisons(pitch_data, pitcher_throws='Right'):
 
 
 def generate_pitcher_pdf(pitcher_name, pitch_data, date, comparison_level='D1'):
-    """Generate a PDF report for the pitcher using WeasyPrint with college comparisons"""
+    """Generate a PDF report for the pitcher using WeasyPrint with college comparisons and movement plot"""
     try:
         # Calculate summary stats
         if not pitch_data:
@@ -728,18 +1024,16 @@ def generate_pitcher_pdf(pitcher_name, pitch_data, date, comparison_level='D1'):
         # Calculate averages for each pitch type WITH college comparisons
         pitch_type_breakdown = []
         
-        # Define priority order - Fastball/Sinker first, then alphabetical
-        priority_types = ['Fastball', 'Sinker', 'Four-Seam', '4-Seam', 'TwoSeam', 'Two-Seam']
+        # Define priority order - Fastball first, then by general usage/importance
+        priority_types = ['Fastball', 'Sinker', 'Cutter', 'Slider', 'Curveball', 'ChangeUp', 'Sweeper', 'Splitter', 'Knuckleball']
         
         # Sort pitch types with priority
         sorted_pitch_types = []
         
         # Add priority types first (if they exist)
         for priority_type in priority_types:
-            for actual_type in pitch_type_data.keys():
-                if priority_type.lower() in actual_type.lower() and actual_type not in sorted_pitch_types:
-                    sorted_pitch_types.append(actual_type)
-                    break
+            if priority_type in pitch_type_data:
+                sorted_pitch_types.append(priority_type)
         
         # Add remaining types alphabetically
         remaining_types = [pt for pt in pitch_type_data.keys() if pt not in sorted_pitch_types]
@@ -830,6 +1124,9 @@ def generate_pitcher_pdf(pitcher_name, pitch_data, date, comparison_level='D1'):
 
         multi_level_stats = get_multi_level_comparisons(pitch_data, pitcher_throws)
         
+        # Generate movement plot SVG
+        movement_plot_svg = generate_movement_plot_svg(pitch_data)
+        
         print(f"Generating PDF for {formatted_name} ({pitcher_throws}) with {len(pitch_data)} pitches and {comparison_level} comparisons")
         
         # Read HTML template
@@ -847,7 +1144,8 @@ def generate_pitcher_pdf(pitcher_name, pitch_data, date, comparison_level='D1'):
             date=date,
             summary_stats=summary_stats,
             pitch_data=pitch_data,
-            multi_level_stats=multi_level_stats  # Add this line
+            multi_level_stats=multi_level_stats,
+            movement_plot_svg=movement_plot_svg  # Add the movement plot SVG
         )
         
         # Generate PDF using WeasyPrint with proper base_url for static files
