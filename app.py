@@ -410,13 +410,13 @@ def get_pitcher_summary():
         
         # Generate movement plot
         movement_plot_svg = generate_movement_plot_svg(pitch_data)
-        pitch_location_svg = generate_pitch_location_plot_svg(pitch_data)
+        pitch_location_plot_svg = generate_pitch_location_plot_svg(pitch_data)  # Updated name
         
         return jsonify({
             'pitch_data': pitch_data,
             'multi_level_stats': multi_level_stats,
             'movement_plot_svg': movement_plot_svg,
-            'pitch_location_svg': pitch_location_svg,
+            'pitch_location_plot_svg': pitch_location_plot_svg,
             'comparison_level': comparison_level,
             'pitcher_throws': pitcher_throws
         })
@@ -1591,9 +1591,25 @@ def generate_pitcher_pdf(pitcher_name, pitch_data, date, comparison_level=None):
 
         multi_level_stats = get_multi_level_comparisons(pitch_data, pitcher_throws)
         
-        # Generate movement plot SVG
+        # Generate SVG plots with debugging
+        print(f"Generating plots for {formatted_name}...")
         movement_plot_svg = generate_movement_plot_svg(pitch_data)
-        pitch_location_svg = generate_pitch_location_plot_svg(pitch_data)
+        pitch_location_plot_svg = generate_pitch_location_plot_svg(pitch_data)
+        
+        # Debug plot generation
+        print(f"Movement plot generated: {movement_plot_svg is not None}")
+        print(f"Pitch location plot generated: {pitch_location_plot_svg is not None}")
+        if pitch_location_plot_svg:
+            print(f"Pitch location SVG length: {len(pitch_location_plot_svg)} characters")
+        else:
+            print("Pitch location plot is None - checking data structure...")
+            if pitch_data:
+                sample_pitch = pitch_data[0]
+                available_fields = list(sample_pitch.keys())
+                print(f"Available fields in pitch data: {available_fields}")
+                # Check for common location field variations
+                location_fields = [field for field in available_fields if 'loc' in field.lower() or 'plate' in field.lower()]
+                print(f"Location-related fields found: {location_fields}")
         
         print(f"Generating PDF for {formatted_name} ({pitcher_throws}) with {len(pitch_data)} pitches and {comparison_level} comparisons")
         
@@ -1613,8 +1629,8 @@ def generate_pitcher_pdf(pitcher_name, pitch_data, date, comparison_level=None):
             summary_stats=summary_stats,
             pitch_data=pitch_data,
             multi_level_stats=multi_level_stats,
-            movement_plot_svg=movement_plot_svg,  # Add the movement plot SVG
-            pitch_location_svg=pitch_location_svg
+            movement_plot_svg=movement_plot_svg,
+            pitch_location_plot_svg=pitch_location_plot_svg  # Fixed variable name
         )
         
         # Generate PDF using WeasyPrint with proper base_url for static files
@@ -1623,12 +1639,21 @@ def generate_pitcher_pdf(pitcher_name, pitch_data, date, comparison_level=None):
             base_url = f"file://{os.path.abspath('.')}/"
             print(f"Using base_url: {base_url}")
             
-            # Check if static/pbr.png exists
-            static_image_path = os.path.join(os.getcwd(), 'static', 'pbr.png')
-            if os.path.exists(static_image_path):
-                print(f"Found image at: {static_image_path}")
-            else:
-                print(f"Warning: Image not found at {static_image_path}")
+            # Check if static files exist
+            static_dir = os.path.join(os.getcwd(), 'static')
+            if not os.path.exists(static_dir):
+                print(f"Warning: Static directory not found at {static_dir}")
+                os.makedirs(static_dir, exist_ok=True)
+                print(f"Created static directory at {static_dir}")
+            
+            # Check for required images
+            required_images = ['pbr.png', 'miss.png']
+            for image_name in required_images:
+                image_path = os.path.join(static_dir, image_name)
+                if os.path.exists(image_path):
+                    print(f"Found image at: {image_path}")
+                else:
+                    print(f"Warning: Image not found at {image_path}")
             
             html_doc = weasyprint.HTML(string=rendered_html, base_url=base_url)
             pdf_bytes = html_doc.write_pdf()
@@ -1636,6 +1661,8 @@ def generate_pitcher_pdf(pitcher_name, pitch_data, date, comparison_level=None):
             return pdf_bytes
         except Exception as e:
             print(f"WeasyPrint error: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return None
         
     except Exception as e:
