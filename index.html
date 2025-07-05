@@ -94,6 +94,14 @@
             background: linear-gradient(135deg, #2980b9 0%, #21618c 100%);
         }
         
+        .summary-btn {
+            background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+        }
+        
+        .summary-btn:hover {
+            background: linear-gradient(135deg, #d35400 0%, #ba4a00 100%);
+        }
+        
         .comparison-info {
             background: #e8f4fd;
             border: 1px solid #3498db;
@@ -208,6 +216,33 @@
             background: #2c3e50;
             color: white;
         }
+        
+        .summary-section {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .summary-section h3 {
+            margin-top: 0;
+            color: #856404;
+        }
+        
+        #summary-content {
+            margin-top: 20px;
+        }
+        
+        .comparison-level-display {
+            background: #e8f4fd;
+            border: 1px solid #3498db;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 10px 0;
+            font-weight: bold;
+            color: #2980b9;
+        }
     </style>
 </head>
 <body>
@@ -221,44 +256,34 @@
             </select>
         </div>
         
-        <div class="form-group">
-            <label for="comparisonSelect">College Comparison Level:</label>
-            <select id="comparisonSelect">
-                <option value="D1">Division I (D1)</option>
-                <option value="D2">Division II (D2)</option>
-                <option value="D3">Division III (D3)</option>
-                <option value="SEC">SEC Conference Only</option>
-            </select>
-        </div>
-        
         <div class="comparison-info">
-            <h3>College Baseball Comparisons</h3>
-            <p>Reports will include comparisons to college baseball averages based on your selection:</p>
+            <h3>Automatic College Baseball Comparisons</h3>
+            <p>Reports will automatically include comparisons based on each pitcher's competition level from the database:</p>
             <ul>
                 <li><strong>D1, D2, D3:</strong> Compares to all teams in that division level</li>
-                <li><strong>SEC:</strong> Compares specifically to SEC conference teams (highest level)</li>
+                <li><strong>SEC, ACC, etc.:</strong> Compares specifically to that conference (highest level)</li>
             </ul>
-            <p>The PDF report will show pitcher values alongside college averages with visual indicators for above/below average performance.</p>
+            <p>The system automatically determines the appropriate comparison level for each pitcher.</p>
         </div>
         
         <div class="form-group">
-            <label for="prospectSelect">Select Prospect (Individual Report):</label>
-            <select id="prospectSelect" disabled>
+            <label for="pitcherSelect">Select Pitcher (Individual Actions):</label>
+            <select id="pitcherSelect" disabled>
                 <option value="">Select a date first</option>
             </select>
         </div>
         
-        <div id="selectedProspectInfo" class="prospect-info" style="display: none;">
-            <h3>Selected Prospect Details</h3>
-            <div id="prospectDetails" class="prospect-details"></div>
+        <div id="selectedPitcherInfo" class="prospect-info" style="display: none;">
+            <h3>Selected Pitcher Details</h3>
+            <div id="pitcherDetails" class="prospect-details"></div>
         </div>
         
         <div class="button-group">
             <button id="sendIndividualBtn" class="individual-btn" onclick="sendIndividualEmail()" disabled>
-                Send Report to Selected Prospect
+                Send Report to Selected Pitcher
             </button>
             <button id="sendBulkBtn" class="bulk-btn" onclick="sendBulkEmails()" disabled>
-                Send Reports to All Matched Prospects
+                Send Reports to All Matched Pitchers
             </button>
         </div>
         
@@ -280,21 +305,21 @@
     <script>
         // Global variables
         let currentDate = '';
-        let currentProspects = [];
-        let selectedProspect = null;
+        let currentPitchers = [];
+        let selectedPitcher = null;
+        let pitcherInfo = {}; // Store pitcher info including email
         
         // DOM elements
         const dateSelect = document.getElementById('dateSelect');
-        const prospectSelect = document.getElementById('prospectSelect');
-        const comparisonSelect = document.getElementById('comparisonSelect');
+        const pitcherSelect = document.getElementById('pitcherSelect');
         const sendIndividualBtn = document.getElementById('sendIndividualBtn');
         const sendBulkBtn = document.getElementById('sendBulkBtn');
         const loading = document.getElementById('loading');
         const error = document.getElementById('error');
         const success = document.getElementById('success');
         const statsDiv = document.getElementById('stats');
-        const selectedProspectInfo = document.getElementById('selectedProspectInfo');
-        const prospectDetails = document.getElementById('prospectDetails');
+        const selectedPitcherInfo = document.getElementById('selectedPitcherInfo');
+        const pitcherDetails = document.getElementById('pitcherDetails');
         const emailResults = document.getElementById('email-results');
         const emailSummary = document.getElementById('email-summary');
         const emailDetails = document.getElementById('email-details');
@@ -374,7 +399,7 @@
             }
         }
         
-        async function sendIndividualEmailAPI(date, prospectName, prospectEmail, comparisonLevel) {
+        async function sendIndividualEmailAPI(date, pitcherName, pitcherEmail) {
             try {
                 const response = await fetch('/api/send-individual-email', {
                     method: 'POST',
@@ -383,9 +408,8 @@
                     },
                     body: JSON.stringify({ 
                         date: date,
-                        pitcher_name: prospectName,
-                        pitcher_email: prospectEmail,
-                        comparison_level: comparisonLevel 
+                        pitcher_name: pitcherName,
+                        pitcher_email: pitcherEmail
                     })
                 });
                 
@@ -402,7 +426,7 @@
             }
         }
         
-        async function sendBulkEmailsAPI(date, comparisonLevel) {
+        async function sendBulkEmailsAPI(date) {
             try {
                 const response = await fetch('/api/send-emails', {
                     method: 'POST',
@@ -410,8 +434,7 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({ 
-                        date: date,
-                        comparison_level: comparisonLevel 
+                        date: date
                     })
                 });
                 
@@ -439,24 +462,27 @@
             });
         }
         
-        function populateProspectSelect(prospects) {
-            prospectSelect.innerHTML = '<option value="">Select a prospect...</option>';
+        function populatePitcherSelect(prospects) {
+            pitcherSelect.innerHTML = '<option value="">Select a pitcher...</option>';
             prospects.forEach((prospect, index) => {
                 const option = document.createElement('option');
                 option.value = index;
-                option.textContent = `${prospect.name} (${prospect.email})`;
-                prospectSelect.appendChild(option);
+                option.textContent = `${prospect.name} (${prospect.email || 'No email'})`;
+                pitcherSelect.appendChild(option);
+                
+                // Store pitcher info for later use
+                pitcherInfo[index] = prospect;
             });
-            prospectSelect.disabled = false;
+            pitcherSelect.disabled = false;
         }
         
-        function displayProspectDetails(prospect) {
-            prospectDetails.innerHTML = `
+        function displayPitcherDetails(prospect) {
+            pitcherDetails.innerHTML = `
                 <div class="prospect-detail">
                     <strong>Name:</strong> ${prospect.name}
                 </div>
                 <div class="prospect-detail">
-                    <strong>Email:</strong> ${prospect.email}
+                    <strong>Email:</strong> ${prospect.email || 'No email available'}
                 </div>
                 <div class="prospect-detail">
                     <strong>Event:</strong> ${prospect.event || 'N/A'}
@@ -464,8 +490,11 @@
                 <div class="prospect-detail">
                     <strong>Type:</strong> ${prospect.type || 'N/A'}
                 </div>
+                <div class="prospect-detail">
+                    <strong>Date:</strong> ${currentDate}
+                </div>
             `;
-            selectedProspectInfo.style.display = 'block';
+            selectedPitcherInfo.style.display = 'block';
         }
         
         function displayStats(stats) {
@@ -486,11 +515,13 @@
         dateSelect.addEventListener('change', async (e) => {
             const selectedDate = e.target.value;
             if (!selectedDate) {
-                prospectSelect.disabled = true;
-                prospectSelect.innerHTML = '<option value="">Select a date first</option>';
-                selectedProspectInfo.style.display = 'none';
+                pitcherSelect.disabled = true;
+                pitcherSelect.innerHTML = '<option value="">Select a date first</option>';
+                selectedPitcherInfo.style.display = 'none';
                 sendIndividualBtn.disabled = true;
                 sendBulkBtn.disabled = true;
+                generateSummaryBtn.disabled = true;
+                summarySection.style.display = 'none';
                 return;
             }
             
@@ -500,9 +531,9 @@
             
             try {
                 const prospects = await fetchMatchedProspects(selectedDate);
-                currentProspects = prospects;
+                currentPitchers = prospects;
                 
-                populateProspectSelect(prospects);
+                populatePitcherSelect(prospects);
                 
                 // Enable bulk send button
                 sendBulkBtn.disabled = false;
@@ -510,36 +541,40 @@
                 showSuccess(`Found ${prospects.length} matched prospects for ${selectedDate}`);
             } catch (err) {
                 showError(`Error loading prospects: ${err.message}`);
-                prospectSelect.disabled = true;
+                pitcherSelect.disabled = true;
                 sendBulkBtn.disabled = true;
             } finally {
                 hideLoading();
             }
         });
         
-        prospectSelect.addEventListener('change', (e) => {
+        pitcherSelect.addEventListener('change', (e) => {
             const selectedIndex = e.target.value;
             if (!selectedIndex) {
-                selectedProspectInfo.style.display = 'none';
+                selectedPitcherInfo.style.display = 'none';
                 sendIndividualBtn.disabled = true;
-                selectedProspect = null;
+                selectedPitcher = null;
                 return;
             }
             
-            selectedProspect = currentProspects[parseInt(selectedIndex)];
-            displayProspectDetails(selectedProspect);
+            selectedPitcher = pitcherInfo[parseInt(selectedIndex)];
+            displayPitcherDetails(selectedPitcher);
             sendIndividualBtn.disabled = false;
         });
         
         // Send individual email function
         async function sendIndividualEmail() {
-            if (!currentDate || !selectedProspect) {
-                showError('Please select a date and prospect first');
+            if (!currentDate || !selectedPitcher) {
+                showError('Please select a date and pitcher first');
                 return;
             }
             
-            const comparisonLevel = comparisonSelect.value;
-            const confirmMessage = `Are you sure you want to send a report to ${selectedProspect.name} (${selectedProspect.email}) with ${comparisonLevel} comparisons?`;
+            if (!selectedPitcher.email) {
+                showError(`No email address found for ${selectedPitcher.name} in the database`);
+                return;
+            }
+            
+            const confirmMessage = `Are you sure you want to send a report to ${selectedPitcher.name} (${selectedPitcher.email})?`;
             
             if (!confirm(confirmMessage)) {
                 return;
@@ -550,11 +585,11 @@
             sendIndividualBtn.disabled = true;
             
             try {
-                const result = await sendIndividualEmailAPI(currentDate, selectedProspect.name, selectedProspect.email, comparisonLevel);
+                const result = await sendIndividualEmailAPI(currentDate, selectedPitcher.name, selectedPitcher.email);
                 
                 if (result.success) {
                     displayIndividualEmailResult(result);
-                    showSuccess(`Report sent successfully to ${selectedProspect.name}!`);
+                    showSuccess(`Report sent successfully to ${selectedPitcher.name}!`);
                 } else {
                     showError(result.error || 'Failed to send report');
                 }
@@ -573,8 +608,7 @@
                 return;
             }
             
-            const comparisonLevel = comparisonSelect.value;
-            const confirmMessage = `Are you sure you want to send reports to all matched prospects for ${currentDate} with ${comparisonLevel} comparisons?`;
+            const confirmMessage = `Are you sure you want to send reports to all matched pitchers for ${currentDate}?`;
             
             if (!confirm(confirmMessage)) {
                 return;
@@ -585,11 +619,11 @@
             sendBulkBtn.disabled = true;
             
             try {
-                const result = await sendBulkEmailsAPI(currentDate, comparisonLevel);
+                const result = await sendBulkEmailsAPI(currentDate);
                 
                 if (result.success) {
                     displayBulkEmailResults(result);
-                    showSuccess(`Bulk emails sent with ${comparisonLevel} comparisons! See detailed results below.`);
+                    showSuccess(`Bulk emails sent! See detailed results below.`);
                 } else {
                     showError('Failed to send bulk emails');
                 }
@@ -604,7 +638,7 @@
         function displayIndividualEmailResult(result) {
             emailSummary.innerHTML = `
                 <h3>Individual Email Result</h3>
-                <p><strong>Prospect:</strong> ${result.pitcher_name}</p>
+                <p><strong>Pitcher:</strong> ${result.pitcher_name}</p>
                 <p><strong>Email:</strong> ${result.email}</p>
                 <p><strong>Date:</strong> ${result.date}</p>
                 <p><strong>Pitch Count:</strong> ${result.pitch_count}</p>
@@ -619,11 +653,10 @@
         function displayBulkEmailResults(result) {
             const summary = result.summary;
             
-            // Display summary with comparison level info
+            // Display summary
             emailSummary.innerHTML = `
                 <h3>Bulk Email Results Summary</h3>
-                <h4>${summary.emails_sent_successfully}/${summary.total_prospects_in_info} emails sent with ${summary.comparison_level} comparisons</h4>
-                <p><strong>Comparison Level:</strong> ${summary.comparison_level}</p>
+                <h4>${summary.emails_sent_successfully}/${summary.total_prospects_in_info} emails sent</h4>
                 <p><strong>Total Prospects:</strong> ${summary.total_prospects_in_info}</p>
                 <p><strong>Successfully Sent:</strong> ${summary.emails_sent_successfully}</p>
                 <p><strong>Failed:</strong> ${summary.emails_failed}</p>

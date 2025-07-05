@@ -359,6 +359,330 @@ def get_stats():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
+@app.route('/api/pitcher-summary')
+def get_pitcher_summary():
+    """API endpoint to get pitcher summary with automatic comparison level"""
+    if not client:
+        return jsonify({'error': 'BigQuery client not initialized'}), 500
+    
+    selected_date = request.args.get('date')
+    pitcher_name = request.args.get('pitcher')
+    
+    if not selected_date or not pitcher_name:
+        return jsonify({'error': 'Date and pitcher parameters are required'}), 400
+    
+    try:
+        # Get pitcher's detailed data
+        query = """
+        SELECT *
+        FROM `V1PBR.Test`
+        WHERE CAST(Date AS STRING) = @date
+        AND Pitcher = @pitcher
+        ORDER BY PitchNo
+        """
+        
+        job_config = bigquery.QueryJobConfig(
+            query_parameters=[
+                bigquery.ScalarQueryParameter("date", "STRING", selected_date),
+                bigquery.ScalarQueryParameter("pitcher", "STRING", pitcher_name),
+            ]
+        )
+        
+        result = client.query(query, job_config=job_config)
+        pitch_data = [dict(row) for row in result]
+        
+        if not pitch_data:
+            return jsonify({'error': 'No pitch data found'}), 404
+        
+        # Get comparison level from Info table
+        comparison_level = get_pitcher_competition_level(pitcher_name)
+        
+        # Determine pitcher handedness
+        pitcher_throws = 'Right'
+        for pitch in pitch_data:
+            if pitch.get('PitcherThrows'):
+                pitcher_throws = pitch.get('PitcherThrows')
+                break
+        
+        # Generate multi-level comparisons using the pitcher's competition level
+        multi_level_stats = get_multi_level_comparisons(pitch_data, pitcher_throws)
+        
+        # Generate movement plot
+        movement_plot_svg = generate_movement_plot_svg(pitch_data)
+        
+        return jsonify({
+            'pitch_data': pitch_data,
+            'multi_level_stats': multi_level_stats,
+            'movement_plot_svg': movement_plot_svg,
+            'comparison_level': comparison_level,
+            'pitcher_throws': pitcher_throws
+        })
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+@app.route('/api/matched-prospects')
+def get_matched_prospects():
+    """API endpoint to get prospects that have both pitch data and email info"""
+    if not client:
+        return jsonify({'error': 'BigQuery client not initialized'}), 500
+    
+    selected_date = request.args.get('date')
+    if not selected_date:
+        return jsonify({'error': 'Date parameter is required'}), 400
+    
+    try:
+        # Get pitchers for the selected date
+        pitchers_query = """
+        SELECT DISTINCT Pitcher
+        FROM `V1PBR.Test`
+        WHERE CAST(Date AS STRING) = @date
+        AND Pitcher IS NOT NULL
+        ORDER BY Pitcher
+        """
+        
+        job_config = bigquery.QueryJobConfig(
+            query_parameters=[
+                bigquery.ScalarQueryParameter("date", "STRING", selected_date),
+            ]
+        )
+        
+        pitchers_result = client.query(pitchers_query, job_config=job_config)
+        pitchers_from_test = [row.Pitcher for row in pitchers_result]
+        
+        # Get prospect info from Info table
+        prospects_query = """
+        SELECT Event, Prospect, Email, Type, Comp
+        FROM `V1PBRInfo.Info`
+        WHERE Prospect IS NOT NULL
+        ORDER BY Prospect
+        """
+        
+        prospects_result = client.query(prospects_query)
+        matched_prospects = []
+        
+        for row in prospects_result:
+            if row.Prospect in pitchers_from_test:
+                matched_prospects.append({
+                    'name': row.Prospect,
+                    'email': row.Email,
+                    'type': row.Type,
+                    'event': row.Event,
+                    'comp': row.Comp or 'D1'
+                })
+        
+        return jsonify({'prospects': matched_prospects})
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+def generate_pitch_location_plot_svg(pitch_data, width=800, height=600):
+    """Generate SVG for pitch location plot (batter's perspective)"""
+    try:
+        # Group pitches by type
+        pitch_types = {}
+        for pitch in pitch_data:
+            pitch_type = pitch.get('TaggedPitchType')
+            if pitch_type and pitch.get('PlateLocSide') is not None and pitch.get('PlateLocHeight') is not None:
+                if pitch_type not in pitch_types:
+                    pitch_types[pitch_type] = []
+                pitch_types[pitch_type].append({
+                    'plate_side': -1 * float(pitch.get('PlateLocSide', 0)),  # Flip for batter's perspective
+                    'plate_height': float(pitch.get('PlateLocHeight', 0))
+                })
+        
+        if not pitch_types:
+            return None
+        
+        # Define colors for pitch types (same as movement plot)
+        colors = {
+            'ChangeUp': '#059669', 'Curveball': '#1D4ED8', 'Cutter': '#BE185D',
+            'Fastball': '#DC2626', 'Knuckleball': '#9333EA', 'Sinker': '#EA580C',
+            'Slider': '#7C3AED', 'Splitter': '#0891B2', 'Sweeper': '#F59E0B',
+            'Four-Seam': '#DC2626', '4-Seam': '#DC2626', 'Two-Seam': '#EA580C',
+            'TwoSeam': '#EA580C', 'Changeup': '#059669', 'Change-up': '#059669',
+            'Curve': '#1D4ED8', 'Cut Fastball': '#BE185D', 'Split-Finger': '#0891B2'
+        }
+        
+        # Set up plot dimensions
+        margin = 60
+        plot_width = width - 2 * margin
+        plot_height = height - 2 * margin
+        
+        # Define coordinate ranges (feet)
+        x_min, x_max = -4, 4
+        y_min, y_max = -2, 6
+        
+        # Scale functions
+        def scale_x(x):
+            return margin + (x - x_min) / (x_max - x_min) * plot_width
+        
+        def scale_y(y):
+            return margin + plot_height - (y - y_min) / (y_max - y_min) * plot_height
+        
+        # Strike zone dimensions (feet)
+        strike_zone = {
+            'xmin': -9.97/12,  # Convert inches to feet
+            'xmax': 9.97/12,
+            'ymin': 18.00/12,
+            'ymax': 40.53/12
+        }
+        
+        # Larger strike zone (shadow zone)
+        larger_strike_zone = {
+            'xmin': strike_zone['xmin'] - 2.00/12,
+            'xmax': strike_zone['xmax'] + 2.00/12,
+            'ymin': strike_zone['ymin'] - 1.47/12,
+            'ymax': strike_zone['ymax'] + 1.47/12
+        }
+        
+        # Home plate coordinates - create 3D effect with multiple layers
+        # Base layer (bottom)
+        home_plate_base = [
+            (-0.7, -0.1),
+            (0.7, -0.1),
+            (0.7, 0.2),
+            (0, 0.5),
+            (-0.7, 0.2),
+            (-0.7, -0.1)
+        ]
+        
+        # Top layer (slightly offset for 3D effect)
+        home_plate_top = [
+            (-0.7, 0.0),
+            (0.7, 0.0),
+            (0.7, 0.3),
+            (0, 0.6),
+            (-0.7, 0.3),
+            (-0.7, 0.0)
+        ]
+        
+        # Start SVG
+        svg_parts = [
+            f'<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg">',
+            '<defs>',
+            '<style>',
+            '.strike-zone { stroke: black; stroke-width: 2; fill: none; }',
+            '.shadow-zone { stroke: black; stroke-width: 1; fill: none; stroke-dasharray: 3,3; }',
+            '.home-plate { stroke: black; stroke-width: 2; fill: white; }',
+            '.batter-box { stroke: black; stroke-width: 3; fill: none; }',
+            '.axis-text { font-family: Arial, sans-serif; font-size: 10px; fill: black; }',
+            '.plot-title { font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; fill: #1a1a1a; text-anchor: start; }',
+            '.plot-subtitle { font-family: Arial, sans-serif; font-size: 12px; fill: #666666; text-anchor: start; font-style: italic; }',
+            '.legend-text { font-family: Arial, sans-serif; font-size: 9px; fill: black; }',
+            '</style>',
+            '</defs>',
+            
+            # White background
+            f'<rect width="{width}" height="{height}" fill="white"/>',
+        ]
+        
+        # Title and subtitle
+        svg_parts.extend([
+            f'<text x="{margin}" y="25" class="plot-title">Pitch Location</text>',
+            f'<text x="{margin}" y="40" class="plot-subtitle">Batter\'s Perspective</text>'
+        ])
+        
+        # Draw larger strike zone (shadow zone)
+        larger_left = scale_x(larger_strike_zone['xmin'])
+        larger_right = scale_x(larger_strike_zone['xmax'])
+        larger_bottom = scale_y(larger_strike_zone['ymin'])
+        larger_top = scale_y(larger_strike_zone['ymax'])
+        
+        svg_parts.append(f'<rect x="{larger_left}" y="{larger_top}" width="{larger_right - larger_left}" height="{larger_bottom - larger_top}" class="shadow-zone"/>')
+        
+        # Draw main strike zone
+        zone_left = scale_x(strike_zone['xmin'])
+        zone_right = scale_x(strike_zone['xmax'])
+        zone_bottom = scale_y(strike_zone['ymin'])
+        zone_top = scale_y(strike_zone['ymax'])
+        
+        svg_parts.append(f'<rect x="{zone_left}" y="{zone_top}" width="{zone_right - zone_left}" height="{zone_bottom - zone_top}" class="strike-zone"/>')
+        
+        # Draw strike zone grid lines (thirds)
+        # Horizontal lines
+        third_height = (strike_zone['ymax'] - strike_zone['ymin']) / 3
+        for i in [1, 2]:
+            y_pos = scale_y(strike_zone['ymin'] + i * third_height)
+            svg_parts.append(f'<line x1="{zone_left}" y1="{y_pos}" x2="{zone_right}" y2="{y_pos}" stroke="black" stroke-width="1"/>')
+        
+        # Vertical lines
+        third_width = (strike_zone['xmax'] - strike_zone['xmin']) / 3
+        for i in [1, 2]:
+            x_pos = scale_x(strike_zone['xmin'] + i * third_width)
+            svg_parts.append(f'<line x1="{x_pos}" y1="{zone_top}" x2="{x_pos}" y2="{zone_bottom}" stroke="black" stroke-width="1"/>')
+        
+        # Draw 3D home plate
+        # Base layer
+        base_points = []
+        for x, y in home_plate_base:
+            base_points.append(f"{scale_x(x)},{scale_y(y)}")
+        svg_parts.append(f'<polygon points="{" ".join(base_points)}" fill="white" stroke="black" stroke-width="1"/>')
+        
+        # Top layer
+        top_points = []
+        for x, y in home_plate_top:
+            top_points.append(f"{scale_x(x)},{scale_y(y)}")
+        svg_parts.append(f'<polygon points="{" ".join(top_points)}" fill="white" stroke="black" stroke-width="2"/>')
+        
+        # Connect the layers to create 3D effect
+        for i in range(len(home_plate_base)):
+            x1, y1 = home_plate_base[i]
+            x2, y2 = home_plate_top[i]
+            svg_parts.append(f'<line x1="{scale_x(x1)}" y1="{scale_y(y1)}" x2="{scale_x(x2)}" y2="{scale_y(y2)}" stroke="black" stroke-width="1"/>')
+        
+        # Draw 3D batter's boxes
+        # Right batter's box (3D perspective)
+        # Front face
+        svg_parts.extend([
+            f'<line x1="{scale_x(1.1)}" y1="{scale_y(-1)}" x2="{scale_x(0.92)}" y2="{scale_y(0.3)}" stroke="black" stroke-width="3"/>',
+            f'<line x1="{scale_x(0.85)}" y1="{scale_y(0.3)}" x2="{scale_x(2.5)}" y2="{scale_y(0.3)}" stroke="black" stroke-width="3"/>',
+        ])
+        
+        # Left batter's box (3D perspective)  
+        # Front face
+        svg_parts.extend([
+            f'<line x1="{scale_x(-1.1)}" y1="{scale_y(-1)}" x2="{scale_x(-0.92)}" y2="{scale_y(0.3)}" stroke="black" stroke-width="3"/>',
+            f'<line x1="{scale_x(-0.85)}" y1="{scale_y(0.3)}" x2="{scale_x(-2.5)}" y2="{scale_y(0.3)}" stroke="black" stroke-width="3"/>',
+        ])
+        
+        # Plot pitch locations (simple circles only)
+        for pitch_type, pitches in pitch_types.items():
+            color = colors.get(pitch_type, '#666666')
+            
+            for pitch in pitches:
+                x_pos = scale_x(pitch['plate_side'])
+                y_pos = scale_y(pitch['plate_height'])
+                
+                # Simple circles for all pitches
+                svg_parts.append(f'<circle cx="{x_pos}" cy="{y_pos}" r="4" fill="{color}" fill-opacity="0.7" stroke="white" stroke-width="1"/>')
+        
+        # Legend (simplified - pitch types only)
+        legend_x = margin + plot_width - 120
+        legend_y = margin + 50
+        
+        # Pitch type legend
+        svg_parts.append(f'<text x="{legend_x}" y="{legend_y}" class="legend-text" style="font-weight: bold;">Pitch Types:</text>')
+        current_y = legend_y + 15
+        
+        for pitch_type in pitch_types.keys():
+            color = colors.get(pitch_type, '#666666')
+            svg_parts.extend([
+                f'<circle cx="{legend_x + 5}" cy="{current_y}" r="3" fill="{color}"/>',
+                f'<text x="{legend_x + 15}" y="{current_y + 3}" class="legend-text">{pitch_type}</text>'
+            ])
+            current_y += 15
+        
+        # Close SVG
+        svg_parts.append('</svg>')
+        
+        return '\n'.join(svg_parts)
+        
+    except Exception as e:
+        print(f"Error generating pitch location plot SVG: {str(e)}")
+        return None
+
+# Replace your generate_movement_plot_svg function with this fixed version:
 def generate_movement_plot_svg(pitch_data, width=1000, height=500):
     """Generate SVG for both movement plot (left) and release plot (right)"""
     try:
@@ -474,6 +798,15 @@ def generate_movement_plot_svg(pitch_data, width=1000, height=500):
         def scale_rel_y(y):
             return rel_y_start + plot_height - (y - rel_y_min) / (rel_y_max - rel_y_min) * plot_height
         
+        # Calculate positions for axis labels (FIXED - calculate outside f-strings)
+        mov_center_x = mov_x_start + plot_width/2
+        mov_bottom_y = height - 10
+        mov_left_y = mov_y_start + plot_height/2
+        
+        rel_center_x = rel_x_start + plot_width/2
+        rel_right_x = width - 15
+        rel_center_y = rel_y_start + plot_height/2
+        
         # Start SVG
         svg_parts = [
             f'<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg">',
@@ -521,10 +854,10 @@ def generate_movement_plot_svg(pitch_data, width=1000, height=500):
         # Movement plot border
         svg_parts.append(f'<rect x="{mov_x_start}" y="{mov_y_start}" width="{plot_width}" height="{plot_height}" class="plot-border"/>')
         
-        # Movement plot axis labels
+        # Movement plot axis labels (FIXED - use pre-calculated positions)
         svg_parts.extend([
-            f'<text x="{mov_x_start + plot_width/2}" y="{height - 10}" class="axis-title" text-anchor="middle">Horizontal Break (in)</text>',
-            f'<text x="20" y="{mov_y_start + plot_height/2}" class="axis-title" text-anchor="middle" transform="rotate(-90, 20, {mov_y_start + plot_height/2})">Induced Vertical Break (in)</text>'
+            f'<text x="{mov_center_x}" y="{mov_bottom_y}" class="axis-title" text-anchor="middle">Horizontal Break (in)</text>',
+            f'<text x="20" y="{mov_left_y}" class="axis-title" text-anchor="middle" transform="rotate(-90, 20, {mov_left_y})">Induced Vertical Break (in)</text>'
         ])
         
         # === RELEASE PLOT (RIGHT) ===
@@ -549,10 +882,10 @@ def generate_movement_plot_svg(pitch_data, width=1000, height=500):
         # Release plot border
         svg_parts.append(f'<rect x="{rel_x_start}" y="{rel_y_start}" width="{plot_width}" height="{plot_height}" class="plot-border"/>')
         
-        # Release plot axis labels
+        # Release plot axis labels (FIXED - use pre-calculated positions)
         svg_parts.extend([
-            f'<text x="{rel_x_start + plot_width/2}" y="{height - 10}" class="axis-title" text-anchor="middle">Release Side (ft)</text>',
-            f'<text x="{width - 15}" y="{rel_y_start + plot_height/2}" class="axis-title" text-anchor="middle" transform="rotate(-90, {width - 15}, {rel_y_start + plot_height/2})">Release Height (ft)</text>'
+            f'<text x="{rel_center_x}" y="{mov_bottom_y}" class="axis-title" text-anchor="middle">Release Side (ft)</text>',
+            f'<text x="{rel_right_x}" y="{rel_center_y}" class="axis-title" text-anchor="middle" transform="rotate(-90, {rel_right_x}, {rel_center_y})">Release Height (ft)</text>'
         ])
         
         # Add LHP/RHP labels to release plot
@@ -709,6 +1042,119 @@ def get_college_max_velocity_averages(pitch_type, comparison_level='D1', pitcher
 
 # Replace the calculate_percentile_rank function with this new function:
 
+def is_horizontal_break_better(difference, pitch_type, pitcher_throws):
+    """Determine if horizontal break difference is better based on pitch type and handedness"""
+    
+    # Normalize pitch type names for comparison
+    pitch_type_lower = pitch_type.lower()
+    
+    # Define pitch categories based on expected break patterns
+    # These should break away from arm side (glove side break)
+    breaking_balls = ['curveball', 'curve', 'slider', 'cutter', 'cut fastball', 'sweeper']
+    
+    # These should have arm-side run
+    fastballs_and_offspeed = [
+        'fastball', 'four-seam', '4-seam', 'fourseam', 'four seam',
+        'sinker', 'two-seam', '2-seam', 'twoseam', 'two seam',
+        'changeup', 'change-up', 'change up', 'changup',
+        'splitter', 'split-finger', 'splitfinger', 'split finger',
+        'knuckleball', 'knuckle ball'
+    ]
+    
+    # Check if pitch type matches any variation
+    is_breaking_ball = any(pattern in pitch_type_lower for pattern in breaking_balls)
+    is_fastball_or_offspeed = any(pattern in pitch_type_lower for pattern in fastballs_and_offspeed)
+    
+    if pitcher_throws == 'Right':
+        if is_breaking_ball:
+            # RHP breaking balls should go negative (toward 1B) - more negative is better
+            return difference < 0
+        elif is_fastball_or_offspeed:
+            # RHP fastballs/offspeed should go positive (toward 3B) - more positive is better
+            return difference > 0
+    elif pitcher_throws == 'Left':
+        if is_breaking_ball:
+            # LHP breaking balls should go positive (toward 3B) - more positive is better
+            return difference > 0
+        elif is_fastball_or_offspeed:
+            # LHP fastballs/offspeed should go negative (toward 1B) - more negative is better
+            return difference < 0
+    
+    # Default case: if pitch type doesn't match known categories, assume more is better
+    return difference > 0
+
+
+def is_ivb_better(difference, pitch_type):
+    """Determine if IVB difference is better based on pitch type"""
+    
+    # Normalize pitch type names for comparison
+    pitch_type_lower = pitch_type.lower()
+    
+    # Define pitch categories where negative IVB is better (breaking balls and offspeed)
+    negative_ivb_pitches = [
+        'curveball', 'curve', 
+        'changeup', 'change-up', 'change up', 'changup',
+        'splitter', 'split-finger', 'splitfinger', 'split finger',
+        'knuckleball', 'knuckle ball',
+        'sinker', 'two-seam', '2-seam', 'twoseam', 'two seam'  # Added sinker variations
+    ]
+    
+    # Check for matches (using 'in' to catch variations)
+    is_negative_ivb_pitch = any(pattern in pitch_type_lower for pattern in negative_ivb_pitches)
+    
+    if is_negative_ivb_pitch:
+        # For these pitches, more negative IVB is better (more drop/sink)
+        return difference < 0
+    else:
+        # For fastballs, cutters, sliders, sweepers - more positive IVB is better (more carry/rise)
+        return difference > 0
+
+def is_velocity_better(difference, pitch_type):
+    """Determine if velocity difference is better based on pitch type"""
+    
+    # Normalize pitch type names for comparison
+    pitch_type_lower = pitch_type.lower()
+    
+    # Define pitch categories where lower velocity is better (offspeed pitches)
+    lower_velo_pitches = [
+        'changeup', 'change-up', 'change up', 'changup',
+        'splitter', 'split-finger', 'splitfinger', 'split finger',
+        'knuckleball', 'knuckle ball'
+    ]
+    
+    # Check for matches
+    is_lower_velo_pitch = any(pattern in pitch_type_lower for pattern in lower_velo_pitches)
+    
+    if is_lower_velo_pitch:
+        # For changeups, splitters, and knuckleballs, lower velocity is better
+        return difference < 0
+    else:
+        # For all other pitches, higher velocity is better
+        return difference > 0
+
+def is_spin_rate_better(difference, pitch_type):
+    """Determine if spin rate difference is better based on pitch type"""
+    
+    # Normalize pitch type names for comparison
+    pitch_type_lower = pitch_type.lower()
+    
+    # Define pitch categories where lower spin rate is better
+    lower_spin_pitches = [
+        'splitter', 'split-finger', 'splitfinger', 'split finger',
+        'knuckleball', 'knuckle ball'  # knuckleballs also benefit from lower spin
+    ]
+    
+    # Check for matches
+    is_lower_spin_pitch = any(pattern in pitch_type_lower for pattern in lower_spin_pitches)
+    
+    if is_lower_spin_pitch:
+        # For splitters and knuckleballs, lower spin rate is better
+        return difference < 0
+    else:
+        # For all other pitches, higher spin rate is better
+        return difference > 0
+
+# Update the calculate_difference_from_average function to use spin rate logic
 def calculate_difference_from_average(pitcher_value, college_average, metric_name=None, pitch_type=None, pitcher_throws=None):
     """Calculate the difference between pitcher's value and college average"""
     if pitcher_value is None or college_average is None:
@@ -723,6 +1169,8 @@ def calculate_difference_from_average(pitcher_value, college_average, metric_nam
         better = is_ivb_better(difference, pitch_type)
     elif metric_name == 'velocity' and pitch_type:
         better = is_velocity_better(difference, pitch_type)
+    elif metric_name == 'spin_rate' and pitch_type:  # Add this line
+        better = is_spin_rate_better(difference, pitch_type)
     else:
         # For all other metrics, more is generally better
         better = difference > 0
@@ -732,74 +1180,6 @@ def calculate_difference_from_average(pitcher_value, college_average, metric_nam
         'better': better,
         'absolute_diff': abs(difference)
     }
-
-# Replace these functions in your app.py
-
-def is_ivb_better(difference, pitch_type):
-    """Determine if IVB difference is better based on pitch type"""
-    
-    # Normalize pitch type names for comparison
-    pitch_type_lower = pitch_type.lower()
-    
-    # Define pitch categories where negative IVB is better (breaking balls and offspeed)
-    negative_ivb_pitches = ['curveball', 'changeup', 'splitter', 'knuckleball']
-    
-    # Check for exact matches first
-    if pitch_type_lower in negative_ivb_pitches:
-        # For these pitches, more negative IVB is better
-        return difference < 0
-    else:
-        # For fastballs, sinkers, cutters, sliders, sweepers - more positive IVB is better
-        return difference > 0
-
-def is_velocity_better(difference, pitch_type):
-    """Determine if velocity difference is better based on pitch type"""
-    
-    # Normalize pitch type names for comparison
-    pitch_type_lower = pitch_type.lower()
-    
-    # Define pitch categories where lower velocity is better (offspeed pitches)
-    lower_velo_pitches = ['changeup', 'splitter', 'knuckleball']
-    
-    # Check for exact matches
-    if pitch_type_lower in lower_velo_pitches:
-        # For changeups, splitters, and knuckleballs, lower velocity is better (more separation from fastball)
-        return difference < 0
-    else:
-        # For all other pitches (fastball, sinker, cutter, slider, curveball, sweeper), higher velocity is better
-        return difference > 0
-
-def is_horizontal_break_better(difference, pitch_type, pitcher_throws):
-    """Determine if horizontal break difference is better based on pitch type and handedness"""
-    
-    # Normalize pitch type names for comparison
-    pitch_type_lower = pitch_type.lower()
-    
-    # Define pitch categories based on expected break patterns
-    breaking_balls = ['curveball', 'slider', 'cutter', 'sweeper']  # Should break away from arm side
-    fastballs_and_offspeed = ['fastball', 'sinker', 'changeup', 'splitter', 'knuckleball']  # Should have arm-side run
-    
-    # Determine pitch category
-    is_breaking_ball = pitch_type_lower in breaking_balls
-    is_fastball_or_offspeed = pitch_type_lower in fastballs_and_offspeed
-    
-    if pitcher_throws == 'Right':
-        if is_breaking_ball:
-            # RHP breaking balls should go negative (more negative is better) - breaks toward 1B
-            return difference < 0
-        elif is_fastball_or_offspeed:
-            # RHP fastballs/offspeed should go positive (more positive is better) - arm-side run toward 3B
-            return difference > 0
-    elif pitcher_throws == 'Left':
-        if is_breaking_ball:
-            # LHP breaking balls should go positive (more positive is better) - breaks toward 3B
-            return difference > 0
-        elif is_fastball_or_offspeed:
-            # LHP fastballs/offspeed should go negative (more negative is better) - arm-side run toward 1B
-            return difference < 0
-    
-    # Default case: if pitch type doesn't match known categories, assume more is better
-    return difference > 0
 
 # Update the get_multi_level_comparisons function:
 
@@ -819,11 +1199,14 @@ def get_multi_level_comparisons(pitch_data, pitcher_throws='Right'):
             pitch_type_data[pitch_type]['pitches'].append(pitch)
             pitch_type_data[pitch_type]['count'] += 1
         
-        # Calculate averages for each pitch type across all levels
+        # Calculate averages for each pitch type across ALL levels (for detailed comparison)
         multi_level_breakdown = []
-        levels = ['D1', 'D2', 'D3']
+        # Get the pitcher's comparison level from the first pitch data
+        pitcher_name = pitch_data[0].get('Pitcher') if pitch_data else None
+        pitcher_comparison_level = get_pitcher_competition_level(pitcher_name) if pitcher_name else 'D1'
+        levels = ['D1', 'D2', 'D3']  # Keep all three levels for detailed comparison
         
- # Define priority order - Fastball first, then by general usage/importance
+        # Define priority order - Fastball first, then by general usage/importance
         priority_types = ['Fastball', 'Sinker', 'Cutter', 'Slider', 'Curveball', 'ChangeUp', 'Sweeper', 'Splitter', 'Knuckleball']
         
         # Sort pitch types with priority
@@ -863,8 +1246,8 @@ def get_multi_level_comparisons(pitch_data, pitcher_throws='Right'):
             
             level_comparisons = {}
             
+            # Get comparisons for ALL levels (D1, D2, D3)
             for level in levels:
-                # Get college averages for display
                 college_averages = get_college_averages(pitch_type, level, pitcher_throws)
                 college_max_velo_averages = get_college_max_velocity_averages(pitch_type, level, pitcher_throws)
                 
@@ -885,7 +1268,9 @@ def get_multi_level_comparisons(pitch_data, pitcher_throws='Right'):
                 
                 spin_diff = calculate_difference_from_average(
                     pitcher_avg_spin, 
-                    college_averages['avg_spin_rate'] if college_averages else None
+                    college_averages['avg_spin_rate'] if college_averages else None,
+                    metric_name='spin_rate',
+                    pitch_type=pitch_type
                 )
                 
                 ivb_diff = calculate_difference_from_average(
@@ -972,7 +1357,8 @@ def get_multi_level_comparisons(pitch_data, pitcher_throws='Right'):
                 'pitcher_rel_height': f"{pitcher_avg_rel_height:.1f}" if pitcher_avg_rel_height else 'N/A',
                 'pitcher_rel_side': f"{pitcher_avg_rel_side:.1f}" if pitcher_avg_rel_side else 'N/A',
                 'pitcher_extension': f"{pitcher_avg_extension:.1f}" if pitcher_avg_extension else 'N/A',
-                'level_comparisons': level_comparisons
+                'level_comparisons': level_comparisons,
+                'comparison_level': pitcher_comparison_level  # Add this for the summary table
             })
         
         return multi_level_breakdown
@@ -984,7 +1370,37 @@ def get_multi_level_comparisons(pitch_data, pitcher_throws='Right'):
         return []
 
 
-def generate_pitcher_pdf(pitcher_name, pitch_data, date, comparison_level='D1'):
+# Add this new function to get pitcher's competition level from Info table
+def get_pitcher_competition_level(pitcher_name):
+    """Get the competition level for a specific pitcher from the Info table"""
+    try:
+        query = """
+        SELECT Comp
+        FROM `V1PBRInfo.Info`
+        WHERE Prospect = @pitcher_name
+        LIMIT 1
+        """
+        
+        job_config = bigquery.QueryJobConfig(
+            query_parameters=[
+                bigquery.ScalarQueryParameter("pitcher_name", "STRING", pitcher_name),
+            ]
+        )
+        
+        result = client.query(query, job_config=job_config)
+        row = list(result)
+        
+        if row and row[0].Comp:
+            return row[0].Comp
+        else:
+            return 'D1'  # Default to D1 if no competition level found
+            
+    except Exception as e:
+        print(f"Error getting competition level for {pitcher_name}: {str(e)}")
+        return 'D1'  # Default to D1 on error
+
+# Update the generate_pitcher_pdf function to automatically get comparison level
+def generate_pitcher_pdf(pitcher_name, pitch_data, date, comparison_level=None):
     """Generate a PDF report for the pitcher using WeasyPrint with college comparisons and movement plot"""
     try:
         # Calculate summary stats
@@ -998,7 +1414,12 @@ def generate_pitcher_pdf(pitcher_name, pitch_data, date, comparison_level='D1'):
             formatted_name = f"{first_name} {last_name}"
         else:
             formatted_name = pitcher_name
-            
+        
+        # Get competition level from Info table if not provided
+        if comparison_level is None:
+            comparison_level = get_pitcher_competition_level(pitcher_name)
+            print(f"Retrieved competition level for {formatted_name}: {comparison_level}")
+        
         # Determine pitcher handedness from the data
         pitcher_throws = 'Right'  # Default to right-handed
         for pitch in pitch_data:
@@ -1066,24 +1487,32 @@ def generate_pitcher_pdf(pitcher_name, pitch_data, date, comparison_level='D1'):
             
             # Calculate comparisons
             velocity_comp = calculate_percentile(pitcher_avg_velocity, 
-                                   college_averages['avg_velocity'] if college_averages else None,
-                                   metric_name='velocity',
-                                   pitch_type=pitch_type)
+                               college_averages['avg_velocity'] if college_averages else None,
+                               metric_name='velocity',
+                               pitch_type=pitch_type)
+            
             spin_comp = calculate_percentile(pitcher_avg_spin, 
-                                           college_averages['avg_spin_rate'] if college_averages else None)
+                           college_averages['avg_spin_rate'] if college_averages else None,
+                           metric_name='spin_rate',
+                           pitch_type=pitch_type)
+            
             ivb_comp = calculate_percentile(pitcher_avg_ivb, 
-                              college_averages['avg_ivb'] if college_averages else None,
-                              metric_name='ivb',
-                              pitch_type=pitch_type)
+                          college_averages['avg_ivb'] if college_averages else None,
+                          metric_name='ivb',
+                          pitch_type=pitch_type)
+            
             hb_comp = calculate_percentile(pitcher_avg_hb, 
-                             college_averages['avg_hb'] if college_averages else None,
-                             metric_name='hb',
-                             pitch_type=pitch_type,
-                             pitcher_throws=pitcher_throws)
+                         college_averages['avg_hb'] if college_averages else None,
+                         metric_name='hb',
+                         pitch_type=pitch_type,
+                         pitcher_throws=pitcher_throws)
+            
             rel_side_comp = calculate_percentile(pitcher_avg_rel_side, 
                                                college_averages['avg_rel_side'] if college_averages else None)
+            
             rel_height_comp = calculate_percentile(pitcher_avg_rel_height, 
                                                  college_averages['avg_rel_height'] if college_averages else None)
+            
             extension_comp = calculate_percentile(pitcher_avg_extension, 
                                                 college_averages['avg_extension'] if college_averages else None)
             
@@ -1126,6 +1555,7 @@ def generate_pitcher_pdf(pitcher_name, pitch_data, date, comparison_level='D1'):
         
         # Generate movement plot SVG
         movement_plot_svg = generate_movement_plot_svg(pitch_data)
+        pitch_location_svg = generate_pitch_location_plot_svg(pitch_data)
         
         print(f"Generating PDF for {formatted_name} ({pitcher_throws}) with {len(pitch_data)} pitches and {comparison_level} comparisons")
         
@@ -1145,7 +1575,8 @@ def generate_pitcher_pdf(pitcher_name, pitch_data, date, comparison_level='D1'):
             summary_stats=summary_stats,
             pitch_data=pitch_data,
             multi_level_stats=multi_level_stats,
-            movement_plot_svg=movement_plot_svg  # Add the movement plot SVG
+            movement_plot_svg=movement_plot_svg,  # Add the movement plot SVG
+            pitch_location_svg=pitch_location_svg
         )
         
         # Generate PDF using WeasyPrint with proper base_url for static files
@@ -1175,13 +1606,18 @@ def generate_pitcher_pdf(pitcher_name, pitch_data, date, comparison_level='D1'):
         traceback.print_exc()
         return None
 
-def send_pitcher_email(pitcher_name, email, pitch_data, date, comparison_level='D1'):
+# Update the send_pitcher_email function to automatically get comparison level
+def send_pitcher_email(pitcher_name, email, pitch_data, date, comparison_level=None):
     """Send email to pitcher with PDF attachment (using WeasyPrint)"""
     try:
         # Check if email config is available
         if not EMAIL_USERNAME or not EMAIL_PASSWORD:
             print("Email configuration not available. Please check email_config.json")
             return False
+        
+        # Get competition level from Info table if not provided
+        if comparison_level is None:
+            comparison_level = get_pitcher_competition_level(pitcher_name)
         
         # Generate PDF using WeasyPrint with college comparisons
         pdf_data = generate_pitcher_pdf(pitcher_name, pitch_data, date, comparison_level)
@@ -1257,6 +1693,7 @@ Coaching Staff
         traceback.print_exc()
         return False
 
+# Update the send_emails route to remove comparison_level parameter
 @app.route('/api/send-emails', methods=['POST'])
 def send_emails():
     """API endpoint to send emails to pitchers with their data"""
@@ -1266,15 +1703,9 @@ def send_emails():
     try:
         data = request.get_json()
         selected_date = data.get('date')
-        comparison_level = data.get('comparison_level', 'D1')  # Default to D1
         
         if not selected_date:
             return jsonify({'error': 'Date is required'}), 400
-        
-        # Validate comparison level
-        valid_levels = ['D1', 'D2', 'D3', 'SEC']
-        if comparison_level not in valid_levels:
-            return jsonify({'error': f'Invalid comparison level. Must be one of: {valid_levels}'}), 400
         
         # Get pitchers for the selected date
         pitchers_query = """
@@ -1296,7 +1727,7 @@ def send_emails():
         
         # Get ALL prospect info from Info table
         prospects_query = """
-        SELECT Event, Prospect, Email, Type
+        SELECT Event, Prospect, Email, Type, Comp
         FROM `V1PBRInfo.Info`
         ORDER BY Prospect
         """
@@ -1310,7 +1741,8 @@ def send_emails():
                 'name': row.Prospect,
                 'email': row.Email,
                 'type': row.Type,
-                'event': row.Event
+                'event': row.Event,
+                'comp': row.Comp or 'D1'  # Default to D1 if Comp is null
             }
             all_prospects.append(prospect_info)
             if row.Email:  # Only add to dict if email exists
@@ -1350,7 +1782,8 @@ def send_emails():
                     pitcher_result = client.query(pitcher_data_query, job_config=pitcher_job_config)
                     pitch_data = [dict(row) for row in pitcher_result]
                     
-                    # Try to send email with college comparisons
+                    # Try to send email with automatic competition level
+                    comparison_level = prospect['comp']
                     print(f"Attempting to send email to {prospect_name} at {prospect['email']} with {comparison_level} comparisons")
                     email_success = send_pitcher_email(prospect_name, prospect['email'], pitch_data, selected_date, comparison_level)
                     print(f"Email result for {prospect_name}: {email_success}")
@@ -1406,8 +1839,7 @@ def send_emails():
                 'emails_sent_successfully': total_sent,
                 'emails_failed': total_failed,
                 'prospects_unmatched': total_unmatched,
-                'match_rate_percentage': round((total_matched / total_prospects) * 100, 1) if total_prospects > 0 else 0,
-                'comparison_level': comparison_level
+                'match_rate_percentage': round((total_matched / total_prospects) * 100, 1) if total_prospects > 0 else 0
             },
             'sent_emails': sent_emails,
             'failed_emails': failed_emails,
@@ -1418,59 +1850,7 @@ def send_emails():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/matched-prospects')
-def get_matched_prospects():
-    """API endpoint to get prospects from Info table that have pitch data for a specific date"""
-    if not client:
-        return jsonify({'error': 'BigQuery client not initialized'}), 500
-    
-    selected_date = request.args.get('date')
-    if not selected_date:
-        return jsonify({'error': 'Date parameter is required'}), 400
-    
-    try:
-        # Get pitchers from Test table for the selected date
-        pitchers_query = """
-        SELECT DISTINCT Pitcher
-        FROM `V1PBR.Test`
-        WHERE CAST(Date AS STRING) = @date
-        AND Pitcher IS NOT NULL
-        """
-        
-        job_config = bigquery.QueryJobConfig(
-            query_parameters=[
-                bigquery.ScalarQueryParameter("date", "STRING", selected_date),
-            ]
-        )
-        
-        pitchers_result = client.query(pitchers_query, job_config=job_config)
-        pitchers_from_test = set([row.Pitcher for row in pitchers_result])
-        
-        # Get prospects from Info table that match pitchers in Test table
-        prospects_query = """
-        SELECT Event, Prospect, Email, Type
-        FROM `V1PBRInfo.Info`
-        WHERE Email IS NOT NULL
-        ORDER BY Prospect
-        """
-        
-        prospects_result = client.query(prospects_query)
-        matched_prospects = []
-        
-        for row in prospects_result:
-            if row.Prospect in pitchers_from_test:
-                matched_prospects.append({
-                    'name': row.Prospect,
-                    'email': row.Email,
-                    'type': row.Type,
-                    'event': row.Event
-                })
-        
-        return jsonify({'prospects': matched_prospects})
-    
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
+# Update the send_individual_email route to remove comparison_level parameter
 @app.route('/api/send-individual-email', methods=['POST'])
 def send_individual_email():
     """API endpoint to send email to a specific pitcher"""
@@ -1482,15 +1862,9 @@ def send_individual_email():
         selected_date = data.get('date')
         pitcher_name = data.get('pitcher_name')
         pitcher_email = data.get('pitcher_email')
-        comparison_level = data.get('comparison_level', 'D1')
         
         if not selected_date or not pitcher_name or not pitcher_email:
             return jsonify({'error': 'Date, pitcher name, and email are required'}), 400
-        
-        # Validate comparison level
-        valid_levels = ['D1', 'D2', 'D3', 'SEC']
-        if comparison_level not in valid_levels:
-            return jsonify({'error': f'Invalid comparison level. Must be one of: {valid_levels}'}), 400
         
         # Get pitcher's detailed data
         pitcher_data_query = """
@@ -1513,6 +1887,9 @@ def send_individual_email():
         
         if not pitch_data:
             return jsonify({'error': f'No pitch data found for {pitcher_name} on {selected_date}'}), 400
+        
+        # Get competition level automatically
+        comparison_level = get_pitcher_competition_level(pitcher_name)
         
         # Send email
         print(f"Attempting to send individual email to {pitcher_name} at {pitcher_email} with {comparison_level} comparisons")

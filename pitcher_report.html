@@ -848,7 +848,7 @@
             font-size: 7px;
             opacity: 0.9;
         }
-    </style>
+</style>
 </head>
 <body>
    <div class="player-info">
@@ -910,8 +910,7 @@
                             <span class="player-value">{{ pitch_type.avg_velocity }}</span>
                             <span class="college-value">{{ summary_stats.comparison_level }}{% if summary_stats.pitcher_throws %} {% if summary_stats.pitcher_throws == 'Right' %}RHP{% else %}LHP{% endif %}{% endif %}: {{ pitch_type.college_velocity }}</span>
                             {% if pitch_type.velocity_comp %}
-                                <div class="comparison-indicator {% if pitch_type.velocity_comp.better %}above-average{% else %}below-average{% endif %}">
-</div>
+                                <div class="comparison-indicator {% if pitch_type.velocity_comp.better %}above-average{% else %}below-average{% endif %}"></div>
                             {% endif %}
                         </td>
                         
@@ -920,8 +919,7 @@
                             <span class="player-value">{{ pitch_type.avg_spin }}</span>
                             <span class="college-value">{{ summary_stats.comparison_level }}{% if summary_stats.pitcher_throws %} {% if summary_stats.pitcher_throws == 'Right' %}RHP{% else %}LHP{% endif %}{% endif %}: {{ pitch_type.college_spin }}</span>
                             {% if pitch_type.spin_comp %}
-                                <div class="comparison-indicator {% if pitch_type.velocity_comp.better %}above-average{% else %}below-average{% endif %}">
-</div>
+                                <div class="comparison-indicator {% if pitch_type.spin_comp.better %}above-average{% else %}below-average{% endif %}"></div>
                             {% endif %}
                         </td>
                         
@@ -930,8 +928,7 @@
                             <span class="player-value">{{ pitch_type.avg_ivb }}</span>
                             <span class="college-value">{{ summary_stats.comparison_level }}{% if summary_stats.pitcher_throws %} {% if summary_stats.pitcher_throws == 'Right' %}RHP{% else %}LHP{% endif %}{% endif %}: {{ pitch_type.college_ivb }}</span>
                             {% if pitch_type.ivb_comp %}
-                                <div class="comparison-indicator {% if pitch_type.velocity_comp.better %}above-average{% else %}below-average{% endif %}">
-</div>
+                                <div class="comparison-indicator {% if pitch_type.ivb_comp.better %}above-average{% else %}below-average{% endif %}"></div>
                             {% endif %}
                         </td>
                         
@@ -940,8 +937,7 @@
                             <span class="player-value">{{ pitch_type.avg_hb }}</span>
                             <span class="college-value">{{ summary_stats.comparison_level }}{% if summary_stats.pitcher_throws %} {% if summary_stats.pitcher_throws == 'Right' %}RHP{% else %}LHP{% endif %}{% endif %}: {{ pitch_type.college_hb }}</span>
                             {% if pitch_type.hb_comp %}
-                                <div class="comparison-indicator {% if pitch_type.velocity_comp.better %}above-average{% else %}below-average{% endif %}">
-</div>
+                                <div class="comparison-indicator {% if pitch_type.hb_comp.better %}above-average{% else %}below-average{% endif %}"></div>
                             {% endif %}
                         </td>
                         
@@ -950,8 +946,7 @@
                             <span class="player-value">{{ pitch_type.avg_rel_side }}</span>
                             <span class="college-value">{{ summary_stats.comparison_level }}{% if summary_stats.pitcher_throws %} {% if summary_stats.pitcher_throws == 'Right' %}RHP{% else %}LHP{% endif %}{% endif %}: {{ pitch_type.college_rel_side }}</span>
                             {% if pitch_type.rel_side_comp %}
-                                <div class="comparison-indicator {% if pitch_type.velocity_comp.better %}above-average{% else %}below-average{% endif %}">
-</div>
+                                <div class="comparison-indicator {% if pitch_type.rel_side_comp.better %}above-average{% else %}below-average{% endif %}"></div>
                             {% endif %}
                         </td>
                         
@@ -960,8 +955,7 @@
                             <span class="player-value">{{ pitch_type.avg_rel_height }}</span>
                             <span class="college-value">{{ summary_stats.comparison_level }}{% if summary_stats.pitcher_throws %} {% if summary_stats.pitcher_throws == 'Right' %}RHP{% else %}LHP{% endif %}{% endif %}: {{ pitch_type.college_rel_height }}</span>
                             {% if pitch_type.rel_height_comp %}
-                                <div class="comparison-indicator {% if pitch_type.velocity_comp.better %}above-average{% else %}below-average{% endif %}">
-</div>
+                                <div class="comparison-indicator {% if pitch_type.rel_height_comp.better %}above-average{% else %}below-average{% endif %}"></div>
                             {% endif %}
                         </td>
                         
@@ -970,8 +964,7 @@
                             <span class="player-value">{{ pitch_type.avg_extension }}</span>
                             <span class="college-value">{{ summary_stats.comparison_level }}{% if summary_stats.pitcher_throws %} {% if summary_stats.pitcher_throws == 'Right' %}RHP{% else %}LHP{% endif %}{% endif %}: {{ pitch_type.college_extension }}</span>
                             {% if pitch_type.extension_comp %}
-                                <div class="comparison-indicator {% if pitch_type.velocity_comp.better %}above-average{% else %}below-average{% endif %}">
-</div>
+                                <div class="comparison-indicator {% if pitch_type.extension_comp.better %}above-average{% else %}below-average{% endif %}"></div>
                             {% endif %}
                         </td>
                         {% else %}
@@ -990,7 +983,6 @@
             </table>
         </div>
     </div>
-
     <!-- NEW MOVEMENT PLOT PAGE -->
     {% if movement_plot_svg %}
     <div class="movement-plot-page">
@@ -1006,6 +998,25 @@
                 Individual pitches are shown as smaller dots, with the larger dot representing the average for each pitch type. 
                 Horizontal break measures side-to-side movement (positive = arm-side break for RHP, glove-side for LHP), 
                 while induced vertical break measures rise or drop relative to gravity.
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+        <!-- NEW PITCH LOCATION PLOT PAGE -->
+    {% if pitch_location_svg %}
+    <div class="movement-plot-page">
+        <div class="movement-plot-header">
+            Pitch Location Analysis
+        </div>
+        <div class="movement-plot-container">
+            <div class="movement-plot-svg">
+                {{ pitch_location_svg|safe }}
+            </div>
+            <div class="movement-plot-description">
+                <strong>Understanding Pitch Location:</strong> This chart shows where each pitch crossed the plate from the batter's perspective. 
+                The inner rectangle represents the strike zone, while the outer dashed rectangle shows the shadow zone. 
+                Different shapes indicate the result of each pitch (ball, called strike, swinging strike, foul, or in play).
             </div>
         </div>
     </div>
