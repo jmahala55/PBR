@@ -410,19 +410,24 @@ def get_pitcher_summary():
         
         # Generate movement plot
         movement_plot_svg = generate_movement_plot_svg(pitch_data)
-        pitch_location_plot_svg = generate_pitch_location_plot_svg(pitch_data)  # Updated name
+        pitch_location_plot_svg = generate_pitch_location_plot_svg(pitch_data)
+        
+        # Calculate zone rates
+        zone_rate_data = calculate_zone_rates(pitch_data)
         
         return jsonify({
             'pitch_data': pitch_data,
             'multi_level_stats': multi_level_stats,
             'movement_plot_svg': movement_plot_svg,
             'pitch_location_plot_svg': pitch_location_plot_svg,
+            'zone_rate_data': zone_rate_data,  # Add this new data
             'comparison_level': comparison_level,
             'pitcher_throws': pitcher_throws
         })
     
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 @app.route('/api/matched-prospects')
 def get_matched_prospects():
     """API endpoint to get prospects that have both pitch data and email info"""
@@ -477,6 +482,85 @@ def get_matched_prospects():
     
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+def calculate_zone_rates(pitch_data):
+    """Calculate zone rates for each pitch type and overall"""
+    try:
+        # Strike zone boundaries (in feet, same as used in the plot)
+        strike_zone = {
+            'xmin': -9.97/12,  # Convert inches to feet
+            'xmax': 9.97/12,
+            'ymin': 18.00/12,
+            'ymax': 40.53/12
+        }
+        
+        def is_in_zone(plate_side, plate_height):
+            """Check if a pitch is in the strike zone"""
+            if plate_side is None or plate_height is None:
+                return False
+            
+            # Flip plate_side for batter's perspective (same as in the plot)
+            flipped_plate_side = -1 * float(plate_side)
+            plate_height_float = float(plate_height)
+            
+            return (strike_zone['xmin'] <= flipped_plate_side <= strike_zone['xmax'] and
+                    strike_zone['ymin'] <= plate_height_float <= strike_zone['ymax'])
+        
+        # Group pitches by type and calculate zone rates
+        pitch_type_data = {}
+        total_pitches = 0
+        total_in_zone = 0
+        
+        for pitch in pitch_data:
+            pitch_type = pitch.get('TaggedPitchType', 'Unknown')
+            plate_side = pitch.get('PlateLocSide')
+            plate_height = pitch.get('PlateLocHeight')
+            
+            # Skip pitches without location data
+            if plate_side is None or plate_height is None:
+                continue
+                
+            total_pitches += 1
+            in_zone = is_in_zone(plate_side, plate_height)
+            
+            if in_zone:
+                total_in_zone += 1
+            
+            if pitch_type not in pitch_type_data:
+                pitch_type_data[pitch_type] = {
+                    'total': 0,
+                    'in_zone': 0
+                }
+            
+            pitch_type_data[pitch_type]['total'] += 1
+            if in_zone:
+                pitch_type_data[pitch_type]['in_zone'] += 1
+        
+        # Calculate zone rate percentages for each pitch type
+        zone_rates = {}
+        for pitch_type, data in pitch_type_data.items():
+            if data['total'] > 0:
+                zone_rate = (data['in_zone'] / data['total']) * 100
+                zone_rates[pitch_type] = {
+                    'zone_rate': zone_rate,
+                    'in_zone': data['in_zone'],
+                    'total': data['total']
+                }
+        
+        # Calculate overall zone rate
+        overall_zone_rate = (total_in_zone / total_pitches * 100) if total_pitches > 0 else 0
+        
+        return {
+            'pitch_type_zone_rates': zone_rates,
+            'overall_zone_rate': overall_zone_rate,
+            'total_pitches_with_location': total_pitches,
+            'total_in_zone': total_in_zone
+        }
+        
+    except Exception as e:
+        print(f"Error calculating zone rates: {str(e)}")
+        return None
 
 def generate_pitch_location_plot_svg(pitch_data, width=700, height=600):
 
@@ -1438,6 +1522,7 @@ def get_pitcher_competition_level(pitcher_name):
         return 'D1'  # Default to D1 on error
 
 # Update the generate_pitcher_pdf function to automatically get comparison level
+# Update the generate_pitcher_pdf function to include zone rate data
 def generate_pitcher_pdf(pitcher_name, pitch_data, date, comparison_level=None):
     """Generate a PDF report for the pitcher using WeasyPrint with college comparisons and movement plot"""
     try:
@@ -1596,9 +1681,14 @@ def generate_pitcher_pdf(pitcher_name, pitch_data, date, comparison_level=None):
         movement_plot_svg = generate_movement_plot_svg(pitch_data)
         pitch_location_plot_svg = generate_pitch_location_plot_svg(pitch_data)
         
+        # Calculate zone rates
+        zone_rate_data = calculate_zone_rates(pitch_data)
+        
         # Debug plot generation
         print(f"Movement plot generated: {movement_plot_svg is not None}")
         print(f"Pitch location plot generated: {pitch_location_plot_svg is not None}")
+        print(f"Zone rate data calculated: {zone_rate_data is not None}")
+        
         if pitch_location_plot_svg:
             print(f"Pitch location SVG length: {len(pitch_location_plot_svg)} characters")
         else:
@@ -1630,7 +1720,8 @@ def generate_pitcher_pdf(pitcher_name, pitch_data, date, comparison_level=None):
             pitch_data=pitch_data,
             multi_level_stats=multi_level_stats,
             movement_plot_svg=movement_plot_svg,
-            pitch_location_plot_svg=pitch_location_plot_svg  # Fixed variable name
+            pitch_location_plot_svg=pitch_location_plot_svg,
+            zone_rate_data=zone_rate_data  # Add zone rate data to template
         )
         
         # Generate PDF using WeasyPrint with proper base_url for static files
