@@ -114,6 +114,180 @@ def get_college_averages(pitch_type, comparison_level='D1', pitcher_throws='Righ
         print(f"Error getting college averages for {pitch_type} ({pitcher_throws}): {str(e)}")
         return None
 
+def get_college_percentile_data(pitch_type, comparison_level='D1', pitcher_throws='Right'):
+    """Get college baseball data for percentile calculations"""
+    try:
+        if comparison_level == 'SEC':
+            level_filter = "League = 'SEC'"
+        elif comparison_level in ['D1', 'D2', 'D3']:
+            level_filter = f"Level = '{comparison_level}'"
+        else:
+            level_filter = "Level = 'D1'"
+        
+        query = f"""
+        SELECT 
+            RelSpeed,
+            SpinRate,
+            InducedVertBreak,
+            HorzBreak,
+            RelSide,
+            RelHeight,
+            Extension
+        FROM `NCAABaseball.2025Final`
+        WHERE TaggedPitchType = @pitch_type
+        AND {level_filter}
+        AND PitcherThrows = @pitcher_throws
+        AND RelSpeed IS NOT NULL
+        AND SpinRate IS NOT NULL
+        AND InducedVertBreak IS NOT NULL
+        AND HorzBreak IS NOT NULL
+        """
+        
+        job_config = bigquery.QueryJobConfig(
+            query_parameters=[
+                bigquery.ScalarQueryParameter("pitch_type", "STRING", pitch_type),
+                bigquery.ScalarQueryParameter("pitcher_throws", "STRING", pitcher_throws),
+            ]
+        )
+        
+        result = client.query(query, job_config=job_config)
+        
+        data = {
+            'velocity': [],
+            'spin_rate': [],
+            'ivb': [],
+            'hb': [],
+            'rel_side': [],
+            'rel_height': [],
+            'extension': []
+        }
+        
+        for row in result:
+            if row.RelSpeed is not None:
+                data['velocity'].append(float(row.RelSpeed))
+            if row.SpinRate is not None:
+                data['spin_rate'].append(float(row.SpinRate))
+            if row.InducedVertBreak is not None:
+                data['ivb'].append(float(row.InducedVertBreak))
+            if row.HorzBreak is not None:
+                data['hb'].append(float(row.HorzBreak))
+            if row.RelSide is not None:
+                data['rel_side'].append(float(row.RelSide))
+            if row.RelHeight is not None:
+                data['rel_height'].append(float(row.RelHeight))
+            if row.Extension is not None:
+                data['extension'].append(float(row.Extension))
+        
+        return data if any(len(values) > 0 for values in data.values()) else None
+        
+    except Exception as e:
+        print(f"Error getting college percentile data for {pitch_type} ({pitcher_throws}): {str(e)}")
+        return None
+
+def get_college_max_velocity_percentile_data(pitch_type, comparison_level='D1', pitcher_throws='Right'):
+    """Get college baseball MAX velocity data for percentile calculations"""
+    try:
+        if comparison_level == 'SEC':
+            level_filter = "League = 'SEC'"
+        elif comparison_level in ['D1', 'D2', 'D3']:
+            level_filter = f"Level = '{comparison_level}'"
+        else:
+            level_filter = "Level = 'D1'"
+        
+        query = f"""
+        SELECT 
+            MAX(RelSpeed) as max_velo
+        FROM `NCAABaseball.2025Final`
+        WHERE TaggedPitchType = @pitch_type
+        AND {level_filter}
+        AND PitcherThrows = @pitcher_throws
+        AND RelSpeed IS NOT NULL
+        GROUP BY Pitcher
+        """
+        
+        job_config = bigquery.QueryJobConfig(
+            query_parameters=[
+                bigquery.ScalarQueryParameter("pitch_type", "STRING", pitch_type),
+                bigquery.ScalarQueryParameter("pitcher_throws", "STRING", pitcher_throws),
+            ]
+        )
+        
+        result = client.query(query, job_config=job_config)
+        
+        max_velocities = []
+        for row in result:
+            if row.max_velo is not None:
+                max_velocities.append(float(row.max_velo))
+        
+        return max_velocities if len(max_velocities) > 0 else None
+        
+    except Exception as e:
+        print(f"Error getting college max velocity percentile data for {pitch_type} ({pitcher_throws}): {str(e)}")
+        return None
+
+def calculate_percentile_rank(player_value, college_data_list, metric_name=None, pitch_type=None, pitcher_throws=None):
+    """Calculate what percentile the player's value falls into compared to college population"""
+    if player_value is None or not college_data_list or len(college_data_list) == 0:
+        return None
+    
+    sorted_college_data = sorted(college_data_list)
+    total_count = len(sorted_college_data)
+    values_below = sum(1 for value in sorted_college_data if value < player_value)
+    raw_percentile = (values_below / total_count) * 100
+    
+    # Determine if this percentile represents "better" performance using existing logic
+    is_better = False
+    if metric_name and pitch_type:
+        if metric_name == 'hb':
+            is_better = is_horizontal_break_better(1, pitch_type, pitcher_throws)
+        elif metric_name == 'ivb':
+            is_better = is_ivb_better(1, pitch_type)
+        elif metric_name == 'velocity':
+            is_better = is_velocity_better(1, pitch_type)
+        elif metric_name == 'spin_rate':
+            is_better = is_spin_rate_better(1, pitch_type)
+        else:
+            is_better = True
+            
+        if not is_better:
+            raw_percentile = 100 - raw_percentile
+    
+    final_percentile = round(raw_percentile, 1)
+    
+    # Cap percentiles: 0% becomes 1%, 100% becomes 99%
+    if final_percentile <= 0:
+        final_percentile = 1.0
+    elif final_percentile >= 100:
+        final_percentile = 99.0
+    
+    return {
+        'percentile': final_percentile,
+        'better': final_percentile >= 50,
+        'total_pitchers': total_count
+    }
+
+def calculate_difference_from_average_with_percentile(pitcher_value, college_data, metric_name=None, pitch_type=None, pitcher_throws=None):
+    """Calculate percentile instead of difference but maintain existing structure for compatibility"""
+    if pitcher_value is None or not college_data:
+        return None
+    
+    percentile_result = calculate_percentile_rank(
+        pitcher_value, 
+        college_data, 
+        metric_name=metric_name, 
+        pitch_type=pitch_type, 
+        pitcher_throws=pitcher_throws
+    )
+    
+    if not percentile_result:
+        return None
+    
+    return {
+        'difference': percentile_result['percentile'],
+        'better': percentile_result['better'],
+        'absolute_diff': abs(percentile_result['percentile'] - 50)
+    }
+
 def calculate_percentile(value, comparison_value, metric_name=None, pitch_type=None, pitcher_throws=None):
     """Calculate how the pitcher's value compares to college average with proper pitch-specific logic"""
     if value is None or comparison_value is None:
@@ -1443,9 +1617,9 @@ def calculate_difference_from_average(pitcher_value, college_average, metric_nam
 # Update the get_multi_level_comparisons function:
 
 def get_multi_level_comparisons(pitch_data, pitcher_throws='Right'):
-    """Get comparisons across D1, D2, and D3 levels for all pitch types using plus/minus differences"""
+    """Get percentile-based comparisons while maintaining existing UI structure and adding college averages"""
     try:
-        # Group pitches by type
+        # Group pitches by type (same as before)
         pitch_type_data = {}
         
         for pitch in pitch_data:
@@ -1458,19 +1632,15 @@ def get_multi_level_comparisons(pitch_data, pitcher_throws='Right'):
             pitch_type_data[pitch_type]['pitches'].append(pitch)
             pitch_type_data[pitch_type]['count'] += 1
         
-        # Calculate averages for each pitch type across ALL levels (for detailed comparison)
+        # Same sorting logic as before
         multi_level_breakdown = []
-        # Get the pitcher's comparison level from the first pitch data
         pitcher_name = pitch_data[0].get('Pitcher') if pitch_data else None
         pitcher_comparison_level = get_pitcher_competition_level(pitcher_name) if pitcher_name else 'D1'
-        levels = ['D1', 'D2', 'D3']  # Keep all three levels for detailed comparison
+        levels = ['D1', 'D2', 'D3']
         
-        # Define priority order - Fastball first, then by general usage/importance
         priority_types = ['Fastball', 'Sinker', 'Cutter', 'Slider', 'Curveball', 'ChangeUp', 'Sweeper', 'Splitter', 'Knuckleball']
         
-        # Sort pitch types with priority
         sorted_pitch_types = []
-        
         for priority_type in priority_types:
             for actual_type in pitch_type_data.keys():
                 if priority_type.lower() in actual_type.lower() and actual_type not in sorted_pitch_types:
@@ -1480,11 +1650,11 @@ def get_multi_level_comparisons(pitch_data, pitcher_throws='Right'):
         remaining_types = [pt for pt in pitch_type_data.keys() if pt not in sorted_pitch_types]
         sorted_pitch_types.extend(sorted(remaining_types))
         
-        for pitch_type in sorted_pitch_types:
+        for i, pitch_type in enumerate(sorted_pitch_types):
             pitches = pitch_type_data[pitch_type]['pitches']
             count = pitch_type_data[pitch_type]['count']
             
-            # Extract metrics
+            # Same metric extraction as before
             velocities = [p.get('RelSpeed', 0) for p in pitches if p.get('RelSpeed')]
             spin_rates = [p.get('SpinRate', 0) for p in pitches if p.get('SpinRate')]
             ivbs = [p.get('InducedVertBreak', 0) for p in pitches if p.get('InducedVertBreak')]
@@ -1493,7 +1663,7 @@ def get_multi_level_comparisons(pitch_data, pitcher_throws='Right'):
             rel_sides = [p.get('RelSide', 0) for p in pitches if p.get('RelSide')]
             extensions = [p.get('Extension', 0) for p in pitches if p.get('Extension')]
             
-            # Calculate averages AND max velocity
+            # Same average calculations as before
             pitcher_avg_velocity = sum(velocities)/len(velocities) if velocities else None
             pitcher_max_velocity = max(velocities) if velocities else None
             pitcher_avg_spin = sum(spin_rates)/len(spin_rates) if spin_rates else None
@@ -1505,109 +1675,117 @@ def get_multi_level_comparisons(pitch_data, pitcher_throws='Right'):
             
             level_comparisons = {}
             
-            # Get comparisons for ALL levels (D1, D2, D3)
+            # Get both percentile data AND college averages for each level
             for level in levels:
+                # Get percentile data
+                college_data = get_college_percentile_data(pitch_type, level, pitcher_throws)
+                college_max_velo_data = get_college_max_velocity_percentile_data(pitch_type, level, pitcher_throws)
+                
+                # Get college averages (your existing function)
                 college_averages = get_college_averages(pitch_type, level, pitcher_throws)
                 college_max_velo_averages = get_college_max_velocity_averages(pitch_type, level, pitcher_throws)
                 
-                # Calculate differences from averages for each metric
-                velocity_diff = calculate_difference_from_average(
+                # Calculate percentiles
+                velocity_diff = calculate_difference_from_average_with_percentile(
                     pitcher_avg_velocity, 
-                    college_averages['avg_velocity'] if college_averages else None,
+                    college_data['velocity'] if college_data else None,
                     metric_name='velocity',
                     pitch_type=pitch_type
                 )
                 
-                max_velocity_diff = calculate_difference_from_average(
+                max_velocity_diff = calculate_difference_from_average_with_percentile(
                     pitcher_max_velocity, 
-                    college_max_velo_averages['avg_max_velocity'] if college_max_velo_averages else None,
+                    college_max_velo_data,
                     metric_name='velocity',
                     pitch_type=pitch_type
                 )
                 
-                spin_diff = calculate_difference_from_average(
+                spin_diff = calculate_difference_from_average_with_percentile(
                     pitcher_avg_spin, 
-                    college_averages['avg_spin_rate'] if college_averages else None,
+                    college_data['spin_rate'] if college_data else None,
                     metric_name='spin_rate',
                     pitch_type=pitch_type
                 )
                 
-                ivb_diff = calculate_difference_from_average(
+                ivb_diff = calculate_difference_from_average_with_percentile(
                     pitcher_avg_ivb, 
-                    college_averages['avg_ivb'] if college_averages else None,
+                    college_data['ivb'] if college_data else None,
                     metric_name='ivb',
                     pitch_type=pitch_type
                 )
                 
-                hb_diff = calculate_difference_from_average(
+                hb_diff = calculate_difference_from_average_with_percentile(
                     pitcher_avg_hb, 
-                    college_averages['avg_hb'] if college_averages else None,
+                    college_data['hb'] if college_data else None,
                     metric_name='hb',
                     pitch_type=pitch_type,
                     pitcher_throws=pitcher_throws
                 )
                 
-                rel_height_diff = calculate_difference_from_average(
+                rel_height_diff = calculate_difference_from_average_with_percentile(
                     pitcher_avg_rel_height, 
-                    college_averages['avg_rel_height'] if college_averages else None
+                    college_data['rel_height'] if college_data else None
                 )
                 
-                rel_side_diff = calculate_difference_from_average(
+                rel_side_diff = calculate_difference_from_average_with_percentile(
                     pitcher_avg_rel_side, 
-                    college_averages['avg_rel_side'] if college_averages else None
+                    college_data['rel_side'] if college_data else None
                 )
                 
-                extension_diff = calculate_difference_from_average(
+                extension_diff = calculate_difference_from_average_with_percentile(
                     pitcher_avg_extension, 
-                    college_averages['avg_extension'] if college_averages else None
+                    college_data['extension'] if college_data else None
                 )
                 
+                # Provide both college averages AND percentiles
                 level_comparisons[level] = {
                     'velocity': {
-                        'college_avg': f"{college_averages['avg_velocity']:.1f}" if college_averages and college_averages['avg_velocity'] else 'N/A',
+                        'college_avg': f"{college_averages['avg_velocity']:.1f}" if college_averages and college_averages.get('avg_velocity') else 'N/A',
                         'comparison': velocity_diff,
-                        'difference': f"{velocity_diff['difference']:+.1f}" if velocity_diff else 'N/A'
+                        'difference': f"{velocity_diff['difference']:.0f}%" if velocity_diff else 'N/A'
                     },
                     'max_velocity': {
-                        'college_avg': f"{college_max_velo_averages['avg_max_velocity']:.1f}" if college_max_velo_averages and college_max_velo_averages['avg_max_velocity'] else 'N/A',
+                        'college_avg': f"{college_max_velo_averages['avg_max_velocity']:.1f}" if college_max_velo_averages and college_max_velo_averages.get('avg_max_velocity') else 'N/A',
                         'comparison': max_velocity_diff,
-                        'difference': f"{max_velocity_diff['difference']:+.1f}" if max_velocity_diff else 'N/A'
+                        'difference': f"{max_velocity_diff['difference']:.0f}%" if max_velocity_diff else 'N/A'
                     },
                     'spin': {
-                        'college_avg': f"{college_averages['avg_spin_rate']:.0f}" if college_averages and college_averages['avg_spin_rate'] else 'N/A',
+                        'college_avg': f"{college_averages['avg_spin_rate']:.0f}" if college_averages and college_averages.get('avg_spin_rate') else 'N/A',
                         'comparison': spin_diff,
-                        'difference': f"{spin_diff['difference']:+.0f}" if spin_diff else 'N/A'
+                        'difference': f"{spin_diff['difference']:.0f}%" if spin_diff else 'N/A'
                     },
                     'ivb': {
-                        'college_avg': f"{college_averages['avg_ivb']:.1f}" if college_averages and college_averages['avg_ivb'] else 'N/A',
+                        'college_avg': f"{college_averages['avg_ivb']:.1f}" if college_averages and college_averages.get('avg_ivb') else 'N/A',
                         'comparison': ivb_diff,
-                        'difference': f"{ivb_diff['difference']:+.1f}" if ivb_diff else 'N/A'
+                        'difference': f"{ivb_diff['difference']:.0f}%" if ivb_diff else 'N/A'
                     },
                     'hb': {
-                        'college_avg': f"{college_averages['avg_hb']:.1f}" if college_averages and college_averages['avg_hb'] else 'N/A',
+                        'college_avg': f"{college_averages['avg_hb']:.1f}" if college_averages and college_averages.get('avg_hb') else 'N/A',
                         'comparison': hb_diff,
-                        'difference': f"{hb_diff['difference']:+.1f}" if hb_diff else 'N/A'
+                        'difference': f"{hb_diff['difference']:.0f}%" if hb_diff else 'N/A'
                     },
                     'rel_height': {
-                        'college_avg': f"{college_averages['avg_rel_height']:.1f}" if college_averages and college_averages['avg_rel_height'] else 'N/A',
+                        'college_avg': f"{college_averages['avg_rel_height']:.1f}" if college_averages and college_averages.get('avg_rel_height') else 'N/A',
                         'comparison': rel_height_diff,
-                        'difference': f"{rel_height_diff['difference']:+.1f}" if rel_height_diff else 'N/A'
+                        'difference': f"{rel_height_diff['difference']:.0f}%" if rel_height_diff else 'N/A'
                     },
                     'rel_side': {
-                        'college_avg': f"{college_averages['avg_rel_side']:.1f}" if college_averages and college_averages['avg_rel_side'] else 'N/A',
+                        'college_avg': f"{college_averages['avg_rel_side']:.1f}" if college_averages and college_averages.get('avg_rel_side') else 'N/A',
                         'comparison': rel_side_diff,
-                        'difference': f"{rel_side_diff['difference']:+.1f}" if rel_side_diff else 'N/A'
+                        'difference': f"{rel_side_diff['difference']:.0f}%" if rel_side_diff else 'N/A'
                     },
                     'extension': {
-                        'college_avg': f"{college_averages['avg_extension']:.1f}" if college_averages and college_averages['avg_extension'] else 'N/A',
+                        'college_avg': f"{college_averages['avg_extension']:.1f}" if college_averages and college_averages.get('avg_extension') else 'N/A',
                         'comparison': extension_diff,
-                        'difference': f"{extension_diff['difference']:+.1f}" if extension_diff else 'N/A'
+                        'difference': f"{extension_diff['difference']:.0f}%" if extension_diff else 'N/A'
                     }
                 }
             
+            # Same structure as before, but add is_first flag
             multi_level_breakdown.append({
                 'name': pitch_type,
                 'count': count,
+                'is_first': i == 0,  # Add this flag to identify first pitch type
                 'pitcher_velocity': f"{pitcher_avg_velocity:.1f}" if pitcher_avg_velocity else 'N/A',
                 'pitcher_max_velocity': f"{pitcher_max_velocity:.1f}" if pitcher_max_velocity else 'N/A',
                 'pitcher_spin': f"{pitcher_avg_spin:.0f}" if pitcher_avg_spin else 'N/A',
@@ -1617,13 +1795,13 @@ def get_multi_level_comparisons(pitch_data, pitcher_throws='Right'):
                 'pitcher_rel_side': f"{pitcher_avg_rel_side:.1f}" if pitcher_avg_rel_side else 'N/A',
                 'pitcher_extension': f"{pitcher_avg_extension:.1f}" if pitcher_avg_extension else 'N/A',
                 'level_comparisons': level_comparisons,
-                'comparison_level': pitcher_comparison_level  # Add this for the summary table
+                'comparison_level': pitcher_comparison_level
             })
         
         return multi_level_breakdown
 
     except Exception as e:
-        print(f"Error getting multi-level comparisons: {str(e)}")
+        print(f"Error getting multi-level percentile comparisons: {str(e)}")
         import traceback
         traceback.print_exc()
         return []

@@ -619,6 +619,91 @@
             opacity: 0.8;
         }
 
+/* Replace your existing .explanation-label CSS with this Option 3 implementation */
+
+/* Replace your existing .explanation-label CSS with this Option 3 implementation */
+
+.badge-container {
+    position: relative;
+}
+
+.info-panel {
+    position: absolute;
+    top: 0;
+    left: 120px;  /* shift it to the right of the badge */
+    width: 180px;
+        background: rgba(255, 255, 255, 0.98);
+    border: 2px solid #3498db;
+    border-radius: 8px;
+    padding: 12px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        backdrop-filter: blur(8px);
+    /* other styles stay the same */
+}
+
+
+
+/* Compact version for smaller panels */
+.info-panel-compact {
+    right: -200px !important;
+    width: 130px !important;
+    padding: 8px !important;
+    font-size: 9px !important;
+}
+
+.info-panel-compact .info-item {
+    padding: 4px 0 !important;
+    font-size: 9px !important;
+}
+
+.info-panel-compact .info-label {
+    font-size: 8px !important;
+    letter-spacing: 0.3px !important;
+}
+
+.info-panel-compact .info-value {
+    font-size: 9px !important;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 11px;
+    align-items: center;
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 10px;
+}
+
+.info-value {
+    font-weight: 700;
+    color: #1a1a1a;
+    font-size: 11px;
+}
+
+/* Print-friendly adjustments */
+@media print {
+    .info-panel, .info-panel-compact {
+        position: static;
+        margin-top: 10px;
+        width: 100%;
+        max-width: 200px;
+        right: auto;
+        top: auto;
+    }
+}
+
         @media print {
             @page {
                 margin: 0.4in;
@@ -1579,16 +1664,15 @@
     </div>
     {% endif %}
     
-<!-- Enhanced Multi-Level College Comparison with Two Columns -->
-    {% if multi_level_stats %}
-    {% for pitch_type in multi_level_stats %}
-    
-    <!-- Page break before each pitch type (except the first one) -->
-    {% if not loop.first %}
-    <div style="page-break-before: always;"></div>
-    {% endif %}
-    
-  <div class="details-section" style="margin-top: 0px;">
+{% if multi_level_stats %}
+{% for pitch_type in multi_level_stats %}
+
+<!-- Page break before each pitch type (except the first one) -->
+{% if not loop.first %}
+<div style="page-break-before: always;"></div>
+{% endif %}
+
+<div class="details-section" style="margin-top: 0px;">
     <h2 class="section-header">{{ pitch_type.name }} College Level Comparisons (D1, D2, D3)</h2>
     
     <div class="pitch-comparison-card" style="max-width: 100%; margin: 0;">
@@ -1605,12 +1689,39 @@
                     <div class="player-value-large">{{ pitch_type.pitcher_velocity }}</div>
                     <div class="level-comparisons">
                         {% for level in ['D1', 'D2', 'D3'] %}
-                        <div class="level-badge {% if pitch_type.level_comparisons[level].velocity.comparison %}{% if pitch_type.level_comparisons[level].velocity.comparison.better %}above{% else %}below{% endif %}{% else %}neutral{% endif %}">
-                            <div class="level-name">{{ level }}</div>
-                            <div>{{ pitch_type.level_comparisons[level].velocity.college_avg }}</div>
-                            {% if pitch_type.level_comparisons[level].velocity.comparison %}
-                            <div class="percentage-diff">{{ pitch_type.level_comparisons[level].velocity.difference }}</div>
-                            {% endif %}
+                        <div class="badge-container">
+                            <div class="level-badge {% if pitch_type.level_comparisons[level].velocity.comparison %}{% if pitch_type.level_comparisons[level].velocity.comparison.better %}above{% else %}below{% endif %}{% else %}neutral{% endif %}">
+                                
+                                <!-- Show info panel ONLY on first pitch type AND D3 badge -->
+                                {% if pitch_type.is_first and level == 'D3' %}
+                                <div class="info-panel info-panel-compact" style="display: block !important;">
+                                    <div class="info-item">
+                                        <span class="info-label">Level:</span>
+                                        <span class="info-value">{{ level }} (Division {{ level[-1] }})</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">College Avg:</span>
+                                        <span class="info-value">{{ pitch_type.level_comparisons[level].velocity.college_avg }}</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">Percentile:</span>
+                                        <span class="info-value">
+                                            {% if pitch_type.level_comparisons[level].velocity.comparison %}
+                                                {{ pitch_type.level_comparisons[level].velocity.comparison.difference }}% percentile
+                                            {% else %}
+                                                N/A
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                <div class="level-name">{{ level }}</div>
+                                <div>{{ pitch_type.level_comparisons[level].velocity.college_avg }}</div>
+                                {% if pitch_type.level_comparisons[level].velocity.comparison %}
+                                <div class="percentage-diff">{{ pitch_type.level_comparisons[level].velocity.difference }}</div>
+                                {% endif %}
+                            </div>
                         </div>
                         {% endfor %}
                     </div>
@@ -1672,6 +1783,7 @@
             <div class="vertical-divider"></div>
             
             <!-- Right Column -->
+             <!-- Right Column -->
             <div class="metrics-column">
                 <!-- Max Velocity Comparison -->
                 <div class="metric-comparison">
