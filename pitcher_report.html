@@ -622,6 +622,47 @@
 /* Replace your existing .explanation-label CSS with this Option 3 implementation */
 
 /* Replace your existing .explanation-label CSS with this Option 3 implementation */
+.layout-with-arrow {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.arrow-explanation {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.arrow-simple {
+    font-size: 16px;
+    color: #3498db;
+    font-weight: bold;
+}
+
+.explanation-text {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 8px;
+    line-height: 1.3;
+    max-width: 120px;
+}
+
+.explanation-label {
+    font-weight: 600;
+    color: #1e293b;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.explanation-value {
+    color: #64748b;
+    font-size: 7px;
+    display: block;
+}
+
 
 .badge-container {
     position: relative;
@@ -1235,6 +1276,85 @@
     line-height: 1.5;
 }
 
+.glossary-page {
+    page-break-before: always;
+    padding: 20px 0;
+}
+
+.glossary-two-column {
+    column-count: 2;
+    column-gap: 30px;
+    column-rule: 2px solid #e2e8f0;
+    padding: 0 20px 20px 20px;
+}
+
+.glossary-header {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    color: white;
+    text-align: center;
+    padding: 20px;
+    margin: 0 0 25px 0;
+    font-size: 20px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    border-radius: 10px;
+}
+
+.term-entry {
+    break-inside: avoid;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.term-entry:last-child {
+    border-bottom: none;
+}
+
+.term-name {
+    font-weight: 700;
+    color: #1e293b;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+}
+
+.term-definition {
+    color: #475569;
+    font-size: 10px;
+    line-height: 1.5;
+    margin-bottom: 4px;
+}
+
+.term-unit {
+    color: #3498db;
+    font-size: 9px;
+    font-weight: 600;
+    font-style: italic;
+}
+
+/* Ensure glossary prints properly */
+@media print {
+    .glossary-page {
+        page-break-before: always;
+        break-inside: avoid;
+    }
+    
+    .glossary-two-column {
+        column-count: 2;
+        column-gap: 30px;
+        column-rule: 2px solid #e2e8f0;
+    }
+    
+    .term-entry {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+}
+
 </style>
 </head>
 <body>
@@ -1330,30 +1450,24 @@
                         
                         <!-- RelSide Comparison -->
                         <td class="metric-value comparison-cell">
-                            <span class="player-value">{{ pitch_type.avg_rel_side }}</span>
-                            <span class="college-value">{{ summary_stats.comparison_level }}{% if summary_stats.pitcher_throws %} {% if summary_stats.pitcher_throws == 'Right' %}RHP{% else %}LHP{% endif %}{% endif %}: {{ pitch_type.college_rel_side }}</span>
-                            {% if pitch_type.rel_side_comp %}
-                                <div class="comparison-indicator {% if pitch_type.rel_side_comp.better %}above-average{% else %}below-average{% endif %}"></div>
-                            {% endif %}
-                        </td>
-                        
-                        <!-- RelHeight Comparison -->
-                        <td class="metric-value comparison-cell">
-                            <span class="player-value">{{ pitch_type.avg_rel_height }}</span>
-                            <span class="college-value">{{ summary_stats.comparison_level }}{% if summary_stats.pitcher_throws %} {% if summary_stats.pitcher_throws == 'Right' %}RHP{% else %}LHP{% endif %}{% endif %}: {{ pitch_type.college_rel_height }}</span>
-                            {% if pitch_type.rel_height_comp %}
-                                <div class="comparison-indicator {% if pitch_type.rel_height_comp.better %}above-average{% else %}below-average{% endif %}"></div>
-                            {% endif %}
-                        </td>
-                        
-                        <!-- Extension Comparison -->
-                        <td class="metric-value comparison-cell">
-                            <span class="player-value">{{ pitch_type.avg_extension }}</span>
-                            <span class="college-value">{{ summary_stats.comparison_level }}{% if summary_stats.pitcher_throws %} {% if summary_stats.pitcher_throws == 'Right' %}RHP{% else %}LHP{% endif %}{% endif %}: {{ pitch_type.college_extension }}</span>
-                            {% if pitch_type.extension_comp %}
-                                <div class="comparison-indicator {% if pitch_type.extension_comp.better %}above-average{% else %}below-average{% endif %}"></div>
-                            {% endif %}
-                        </td>
+    <span class="player-value">{{ pitch_type.avg_rel_side }}</span>
+    <span class="college-value">{{ summary_stats.comparison_level }}{% if summary_stats.pitcher_throws %} {% if summary_stats.pitcher_throws == 'Right' %}RHP{% else %}LHP{% endif %}{% endif %}: {{ pitch_type.college_rel_side }}</span>
+    <!-- NO comparison indicator div here -->
+</td>
+
+<!-- RelHeight Comparison (NO ARROW) -->
+<td class="metric-value comparison-cell">
+    <span class="player-value">{{ pitch_type.avg_rel_height }}</span>
+    <span class="college-value">{{ summary_stats.comparison_level }}{% if summary_stats.pitcher_throws %} {% if summary_stats.pitcher_throws == 'Right' %}RHP{% else %}LHP{% endif %}{% endif %}: {{ pitch_type.college_rel_height }}</span>
+    <!-- NO comparison indicator div here -->
+</td>
+
+<!-- Extension Comparison (NO ARROW) -->
+<td class="metric-value comparison-cell">
+    <span class="player-value">{{ pitch_type.avg_extension }}</span>
+    <span class="college-value">{{ summary_stats.comparison_level }}{% if summary_stats.pitcher_throws %} {% if summary_stats.pitcher_throws == 'Right' %}RHP{% else %}LHP{% endif %}{% endif %}: {{ pitch_type.college_extension }}</span>
+    <!-- NO comparison indicator div here -->
+</td>
                         {% else %}
                         <!-- No comparison data available -->
                         <td class="metric-value">{{ pitch_type.avg_velocity }}</td>
@@ -1687,44 +1801,44 @@
                 <div class="metric-comparison">
                     <div class="metric-name">Velocity (mph)</div>
                     <div class="player-value-large">{{ pitch_type.pitcher_velocity }}</div>
-                    <div class="level-comparisons">
-                        {% for level in ['D1', 'D2', 'D3'] %}
-                        <div class="badge-container">
+                    
+                    {% if pitch_type.is_first %}
+                    <!-- Show explanation only on first pitch type -->
+                    <div class="layout-with-arrow">
+                        <div class="level-comparisons">
+                            {% for level in ['D1', 'D2', 'D3'] %}
                             <div class="level-badge {% if pitch_type.level_comparisons[level].velocity.comparison %}{% if pitch_type.level_comparisons[level].velocity.comparison.better %}above{% else %}below{% endif %}{% else %}neutral{% endif %}">
-                                
-                                <!-- Show info panel ONLY on first pitch type AND D3 badge -->
-                                {% if pitch_type.is_first and level == 'D3' %}
-                                <div class="info-panel info-panel-compact" style="display: block !important;">
-                                    <div class="info-item">
-                                        <span class="info-label">Level:</span>
-                                        <span class="info-value">{{ level }} (Division {{ level[-1] }})</span>
-                                    </div>
-                                    <div class="info-item">
-                                        <span class="info-label">College Avg:</span>
-                                        <span class="info-value">{{ pitch_type.level_comparisons[level].velocity.college_avg }}</span>
-                                    </div>
-                                    <div class="info-item">
-                                        <span class="info-label">Percentile:</span>
-                                        <span class="info-value">
-                                            {% if pitch_type.level_comparisons[level].velocity.comparison %}
-                                                {{ pitch_type.level_comparisons[level].velocity.comparison.difference }}% percentile
-                                            {% else %}
-                                                N/A
-                                            {% endif %}
-                                        </span>
-                                    </div>
-                                </div>
-                                {% endif %}
-                                
                                 <div class="level-name">{{ level }}</div>
                                 <div>{{ pitch_type.level_comparisons[level].velocity.college_avg }}</div>
                                 {% if pitch_type.level_comparisons[level].velocity.comparison %}
                                 <div class="percentage-diff">{{ pitch_type.level_comparisons[level].velocity.difference }}</div>
                                 {% endif %}
                             </div>
+                            {% endfor %}
+                        </div>
+                        <div class="arrow-explanation">
+                            <div class="arrow-simple">→</div>
+                            <div class="explanation-text">
+                                <span class="explanation-label">D3 = Division Level</span>
+                                <span class="explanation-value">{{ pitch_type.level_comparisons['D3'].velocity.college_avg }} = College Average</span>
+                                <span class="explanation-value">{{ pitch_type.level_comparisons['D3'].velocity.difference }} = Your Percentile</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <!-- Regular layout for other pitch types -->
+                    <div class="level-comparisons">
+                        {% for level in ['D1', 'D2', 'D3'] %}
+                        <div class="level-badge {% if pitch_type.level_comparisons[level].velocity.comparison %}{% if pitch_type.level_comparisons[level].velocity.comparison.better %}above{% else %}below{% endif %}{% else %}neutral{% endif %}">
+                            <div class="level-name">{{ level }}</div>
+                            <div>{{ pitch_type.level_comparisons[level].velocity.college_avg }}</div>
+                            {% if pitch_type.level_comparisons[level].velocity.comparison %}
+                            <div class="percentage-diff">{{ pitch_type.level_comparisons[level].velocity.difference }}</div>
+                            {% endif %}
                         </div>
                         {% endfor %}
                     </div>
+                    {% endif %}
                 </div>
                 
                 <!-- Spin Rate Comparison -->
@@ -1783,7 +1897,6 @@
             <div class="vertical-divider"></div>
             
             <!-- Right Column -->
-             <!-- Right Column -->
             <div class="metrics-column">
                 <!-- Max Velocity Comparison -->
                 <div class="metric-comparison">
@@ -1857,8 +1970,76 @@
     </div>
 </div>
     
-    {% endfor %}
-    {% endif %}
+{% endfor %}
+{% endif %}
+
+<div class="glossary-page">
+    <div class="glossary-header">
+        Trackman Metrics Glossary
+    </div>
+    
+    <div class="glossary-two-column">
+        <div class="term-entry">
+            <div class="term-name">Velocity</div>
+            <div class="term-definition">The speed of the baseball as it leaves the pitcher's hand, measured by radar technology. This is the raw speed of the pitch and is one of the most fundamental metrics for evaluating pitching performance.</div>
+            <div class="term-unit">Measured in miles per hour (mph)</div>
+        </div>
+        
+        <div class="term-entry">
+            <div class="term-name">Spin Rate</div>
+            <div class="term-definition">The rate at which the baseball rotates around its axis during flight. Higher spin rates generally create more movement and can make fastballs appear to "rise" or breaking balls break more sharply.</div>
+            <div class="term-unit">Measured in revolutions per minute (rpm)</div>
+        </div>
+        
+        <div class="term-entry">
+            <div class="term-name">Induced Vertical Break</div>
+            <div class="term-definition">The vertical movement of the pitch due to spin, measured against the effect of gravity alone. Positive values indicate the ball stays up longer than gravity would allow, while negative values show the ball drops more than expected.</div>
+            <div class="term-unit">Measured in inches (in)</div>
+        </div>
+        
+        <div class="term-entry">
+            <div class="term-name">Horizontal Break</div>
+            <div class="term-definition">The horizontal movement of the pitch from the pitcher's perspective due to spin and arm angle. Positive values represent movement toward the pitcher's arm side, while negative values show movement toward the glove side.</div>
+            <div class="term-unit">Measured in inches (in)</div>
+        </div>
+        
+        <div class="term-entry">
+            <div class="term-name">Release Height</div>
+            <div class="term-definition">The vertical distance from the ground to the ball at the point of release from the pitcher's hand. Taller pitchers typically have higher release points, which can create a steeper angle to the plate.</div>
+            <div class="term-unit">Measured in feet (ft)</div>
+        </div>
+        
+        <div class="term-entry">
+            <div class="term-name">Release Side</div>
+            <div class="term-definition">The horizontal distance from the center of the pitcher's mound to the release point of the ball. This measurement indicates how far left or right the pitcher releases the ball relative to the rubber.</div>
+            <div class="term-unit">Measured in feet (ft)</div>
+        </div>
+        
+        <div class="term-entry">
+            <div class="term-name">Extension</div>
+            <div class="term-definition">How far toward home plate the pitcher releases the ball beyond the front of the rubber. Greater extension effectively shortens the distance to the batter and can make pitches appear faster.</div>
+            <div class="term-unit">Measured in feet (ft)</div>
+        </div>
+        
+        <div class="term-entry">
+            <div class="term-name">Max Velocity</div>
+            <div class="term-definition">The highest velocity recorded for a specific pitch type during the session. This represents the pitcher's peak performance for that particular pitch and is often used to evaluate power potential.</div>
+            <div class="term-unit">Measured in miles per hour (mph)</div>
+        </div>
+        
+        <div class="term-entry">
+            <div class="term-name">Percentile Ranking</div>
+            <div class="term-definition">A statistical measure showing what percentage of college pitchers the player performs better than in each metric. A 75th percentile ranking means the player performs better than 75% of college pitchers at that level.</div>
+            <div class="term-unit">Expressed as a percentage (%)</div>
+        </div>
+        
+        <div class="term-entry">
+            <div class="term-name">Strike Zone</div>
+            <div class="term-definition">The three-dimensional area over home plate between the batter's knees and chest. Trackman technology precisely measures pitch location relative to this zone to calculate strike percentages and command metrics.</div>
+            <div class="term-unit">Defined in feet and inches</div>
+        </div>
+    </div>
+</div>
 
 <div class="footer">
   <img src="static/pbr.png" alt="PBR Logo" class="footer-logo">
